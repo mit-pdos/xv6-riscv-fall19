@@ -341,7 +341,7 @@ exit(void)
   p->cwd = 0;
 
   acquire(&p->parent->lock);
-    
+
   acquire(&p->lock);
 
   // Give any children to init.

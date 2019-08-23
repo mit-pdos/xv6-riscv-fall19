@@ -136,6 +136,8 @@ UPROGS=\
 	$U/_cow\
 	$U/_uthread\
 	$U/_call\
+	$U/_kalloctest\
+	$U/_bcachetest\
 
 fs.img: mkfs/mkfs README user/xargstest.sh $(UPROGS)
 	mkfs/mkfs fs.img README user/xargstest.sh $(UPROGS)
