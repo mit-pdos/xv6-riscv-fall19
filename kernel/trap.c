@@ -187,8 +187,8 @@ devintr()
 
     if(irq == UART0_IRQ){
       uartintr();
-    } else if(irq == VIRTIO0_IRQ){
-      virtio_disk_intr();
+    } else if(irq == VIRTIO0_IRQ || irq == VIRTIO1_IRQ ){
+      virtio_disk_intr(irq - VIRTIO0_IRQ);
     }
 
     plic_complete(irq);

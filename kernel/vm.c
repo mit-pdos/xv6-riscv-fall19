@@ -29,8 +29,11 @@ kvminit()
   // uart registers
   kvmmap(UART0, UART0, PGSIZE, PTE_R | PTE_W);
 
-  // virtio mmio disk interface
-  kvmmap(VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
+  // virtio mmio disk interface 0
+  kvmmap(VIRTION(0), VIRTION(0), PGSIZE, PTE_R | PTE_W);
+
+  // virtio mmio disk interface 1
+  kvmmap(VIRTION(1), VIRTION(1), PGSIZE, PTE_R | PTE_W);
 
   // CLINT
   kvmmap(CLINT, CLINT, 0x10000, PTE_R | PTE_W);
