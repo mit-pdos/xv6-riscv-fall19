@@ -3,6 +3,9 @@
 #include "memlayout.h"
 #include "riscv.h"
 #include "spinlock.h"
+#include "sleeplock.h"
+#include "fs.h"
+#include "file.h"
 #include "proc.h"
 #include "defs.h"
 
@@ -335,9 +338,9 @@ exit(void)
     }
   }
 
-  begin_op();
+  begin_op(ROOTDEV);
   iput(p->cwd);
-  end_op();
+  end_op(ROOTDEV);
   p->cwd = 0;
 
   acquire(&p->parent->lock);
@@ -497,7 +500,7 @@ forkret(void)
     // regular process (e.g., because it calls sleep), and thus cannot
     // be run from main().
     first = 0;
-    fsinit(ROOTDEV);
+    fsinit(minor(ROOTDEV));
   }
 
   usertrapret();
