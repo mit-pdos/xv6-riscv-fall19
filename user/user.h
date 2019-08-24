@@ -24,6 +24,9 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int ntas();
+int crash(const char*, int);
+int mount(char*, char *);
+int umount(char*);
 
 // ulib.c
 int stat(const char*, struct stat*);
