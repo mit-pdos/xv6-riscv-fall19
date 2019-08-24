@@ -68,6 +68,7 @@ void            initlog(int, struct superblock*);
 void            log_write(struct buf*);
 void            begin_op(int);
 void            end_op(int);
+void            crash_op(int,int);
 
 // pipe.c
 int             pipealloc(struct file**, struct file**);
