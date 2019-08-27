@@ -12,6 +12,6 @@ int f(int x) {
 }
 
 void main(void) {
-  printf(1, "%d %d\n", f(8)+1, 13);
+  printf("%d %d\n", f(8)+1, 13);
   exit();
 }

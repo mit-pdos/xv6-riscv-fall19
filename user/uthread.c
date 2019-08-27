@@ -55,7 +55,7 @@ thread_schedule(void)
   }
 
   if (next_thread == 0) {
-    printf(2, "thread_schedule: no runnable threads\n");
+    printf("thread_schedule: no runnable threads\n");
     exit();
   }
 
@@ -91,12 +91,12 @@ static void
 mythread(void)
 {
   int i;
-  printf(1, "my thread running\n");
+  printf("my thread running\n");
   for (i = 0; i < 100; i++) {
-    printf(1, "my thread %p\n", (uint64) current_thread);
+    printf("my thread %p\n", (uint64) current_thread);
     thread_yield();
   }
-  printf(1, "my thread: exit\n");
+  printf("my thread: exit\n");
   current_thread->state = FREE;
   thread_schedule();
 }

@@ -22,12 +22,12 @@ main(int argc, char *argv[])
 void test0()
 {
   void *a, *a1;
-  printf(1, "start test0\n");  
+  printf("start test0\n");  
   int n = ntas();
   for(int i = 0; i < NCHILD; i++){
     int pid = fork();
     if(pid < 0){
-      printf(2, "fork failed");
+      printf("fork failed");
       exit();
     }
     if(pid == 0){
@@ -39,7 +39,7 @@ void test0()
         *(int *)(a+4) = 1;
         a1 = sbrk(-4096);
         if (a1 != a + 4096) {
-          printf(2, "wrong sbrk\n");
+          printf("wrong sbrk\n");
           exit();
         }
       }
@@ -51,7 +51,7 @@ void test0()
     wait();
   }
   int t = ntas();
-  printf(1, "test0 done: #test-and-sets = %d\n", t - n);
+  printf("test0 done: #test-and-sets = %d\n", t - n);
 }
 
 // Run system out of memory and count tot memory allocated
@@ -62,16 +62,16 @@ void test1()
   int tot = 0;
   char buf[1];
   
-  printf(1, "start test1\n");  
+  printf("start test1\n");  
   for(int i = 0; i < NCHILD; i++){
     int fds[2];
     if(pipe(fds) != 0){
-      printf(1, "pipe() failed\n");
+      printf("pipe() failed\n");
       exit();
     }
     int pid = fork();
     if(pid < 0){
-      printf(2, "fork failed");
+      printf("fork failed");
       exit();
     }
     if(pid == 0){
@@ -83,7 +83,7 @@ void test1()
         }
         *(int *)(a+4) = 1;
         if (write(fds[1], "x", 1) != 1) {
-          printf(1, "write failed");
+          printf("write failed");
           exit();
         }
       }
@@ -104,11 +104,11 @@ void test1()
     }
   }
   int n = (PHYSTOP-KERNBASE)/PGSIZE;
-  printf(1, "total allocated number of pages: %d (out of %d)\n", tot, n);
+  printf("total allocated number of pages: %d (out of %d)\n", tot, n);
   if(n - tot > 1000) {
-    printf(1, "test1 failed: cannot allocate enough memory\n");
+    printf("test1 failed: cannot allocate enough memory\n");
     exit();
   }
-  printf(1, "test1 done\n");
+  printf("test1 done\n");
 }
 

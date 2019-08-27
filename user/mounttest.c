@@ -32,103 +32,103 @@ void test0()
   char buf[4];
   struct stat st;
   
-  printf(1, "test0 start\n");
+  printf("test0 start\n");
 
   mknod("disk1", DISK, 1);
   mkdir("/m");
   
   if (mount("/disk1", "/m") < 0) {
-    printf(1, "mount failed\n");
+    printf("mount failed\n");
     exit();
   }    
 
   if (stat("/m", &st) < 0) {
-    printf(1, "stat /m failed\n");
+    printf("stat /m failed\n");
     exit();
   }
 
   if (st.ino != 1 || minor(st.dev) != 1) {
-    printf(1, "stat wrong inum/minor %d %d\n", st.ino, minor(st.dev));
+    printf("stat wrong inum/minor %d %d\n", st.ino, minor(st.dev));
     exit();
   }
   
   if ((fd = open("/m/README", O_RDONLY)) < 0) {
-    printf(1, "open read failed\n");
+    printf("open read failed\n");
     exit();
   }
   if (read(fd, buf, sizeof(buf)-1) != sizeof(buf)-1) {
-    printf(1, "read failed\n");
+    printf("read failed\n");
     exit();
   }
   if (strcmp("xv6", buf) != 0) {
-    printf(1, "read failed\n", buf);
+    printf("read failed\n", buf);
   }
   close(fd);
   
   if ((fd = open("/m/a", O_CREATE|O_WRONLY)) < 0) {
-    printf(1, "open write failed\n");
+    printf("open write failed\n");
     exit();
   }
   
   if (write(fd, buf, sizeof(buf)) != sizeof(buf)) {
-    printf(1, "write failed\n");
+    printf("write failed\n");
     exit();
   }
 
   close(fd);
 
   if (stat("/m/a", &st) < 0) {
-    printf(1, "stat /m/a failed\n");
+    printf("stat /m/a failed\n");
     exit();
   }
 
   if (minor(st.dev) != 1) {
-    printf(1, "stat wrong minor %d\n", minor(st.dev));
+    printf("stat wrong minor %d\n", minor(st.dev));
     exit();
   }
 
 
   if (link("m/a", "/a") == 0) {
-    printf(1, "link m/a a succeeded\n");
+    printf("link m/a a succeeded\n");
     exit();
   }
 
   if (unlink("m/a") < 0) {
-    printf(1, "unlink m/a failed\n");
+    printf("unlink m/a failed\n");
     exit();
   }
 
   if (chdir("/m") < 0) {
-    printf(1, "chdir /m failed\n");
+    printf("chdir /m failed\n");
     exit();
   }
 
   if (stat(".", &st) < 0) {
-    printf(1, "stat . failed\n");
+    printf("stat . failed\n");
     exit();
   }
 
   if (st.ino != 1 || minor(st.dev) != 1) {
-    printf(1, "stat wrong inum/minor %d %d\n", st.ino, minor(st.dev));
+    printf("stat wrong inum/minor %d %d\n", st.ino, minor(st.dev));
     exit();
   }
 
   if (chdir("..") < 0) {
-    printf(1, "chdir .. failed\n");
+    printf("chdir .. failed\n");
     exit();
   }
 
   if (stat(".", &st) < 0) {
-    printf(1, "stat . failed\n");
+    printf("stat . failed\n");
     exit();
   }
 
   if (st.ino == 1 && minor(st.dev) == 0) {
-    printf(1, "stat wrong inum/minor %d %d\n", st.ino, minor(st.dev));
+    printf("stat wrong inum/minor %d %d\n", st.ino, minor(st.dev));
     exit();
   }
 
-  printf(1, "test0 done\n");
+  printf("test0 done\n");
 }
 
 // depends on test0
@@ -137,74 +137,74 @@ void test1() {
   int fd;
   int i;
   
-  printf(1, "test1 start\n");
+  printf("test1 start\n");
 
   if (mount("/disk1", "/m") == 0) {
-    printf(1, "mount should fail\n");
+    printf("mount should fail\n");
     exit();
   }    
 
   if (umount("/m") < 0) {
-    printf(1, "umount /m failed\n");
+    printf("umount /m failed\n");
     exit();
   }    
 
   if (umount("/m") == 0) {
-    printf(1, "umount /m succeeded\n");
+    printf("umount /m succeeded\n");
     exit();
   }    
 
   if (umount("/") == 0) {
-    printf(1, "umount / succeeded\n");
+    printf("umount / succeeded\n");
     exit();
   }    
 
   if (stat("/m", &st) < 0) {
-    printf(1, "stat /m failed\n");
+    printf("stat /m failed\n");
     exit();
   }
 
   if (minor(st.dev) != 0) {
-    printf(1, "stat wrong inum/dev %d %d\n", st.ino, minor(st.dev));
+    printf("stat wrong inum/dev %d %d\n", st.ino, minor(st.dev));
     exit();
   }
 
   // many mounts and umounts
   for (i = 0; i < 100; i++) {
     if (mount("/disk1", "/m") < 0) {
-      printf(1, "mount /m should succeed\n");
+      printf("mount /m should succeed\n");
       exit();
     }    
 
     if (umount("/m") < 0) {
-      printf(1, "umount /m failed\n");
+      printf("umount /m failed\n");
       exit();
     }
   }
 
   if (mount("/disk1", "/m") < 0) {
-    printf(1, "mount /m should succeed\n");
+    printf("mount /m should succeed\n");
     exit();
   }    
 
   if ((fd = open("/m/README", O_RDONLY)) < 0) {
-    printf(1, "open read failed\n");
+    printf("open read failed\n");
     exit();
   }
 
   if (umount("/m") == 0) {
-    printf(1, "umount /m succeeded\n");
+    printf("umount /m succeeded\n");
     exit();
   }
 
   close(fd);
   
   if (umount("/m") < 0) {
-    printf(1, "final umount failed\n");
+    printf("final umount failed\n");
     exit();
   }
 
-  printf(1, "test1 done\n");
+  printf("test1 done\n");
 }
 
 
@@ -220,18 +220,18 @@ void test2() {
   int i;
   char buf[1];
 
-  printf(1, "test2\n");
+  printf("test2\n");
 
   mkdir("/m");
   
   if (mount("/disk1", "/m") < 0) {
-      printf(1, "mount failed\n");
+      printf("mount failed\n");
       exit();
   }    
 
   for (i = 0; i < NPID; i++) {
     if ((pid[i] = fork()) < 0) {
-      printf(1, "fork failed\n");
+      printf("fork failed\n");
       exit();
     }
     if (pid[i] == 0) {
@@ -244,15 +244,15 @@ void test2() {
   }
   for (i = 0; i < NOP; i++) {
     if ((fd = open("/m/b", O_CREATE|O_WRONLY)) < 0) {
-      printf(1, "open write failed");
+      printf("open write failed");
       exit();
     }
     if (unlink("/m/b") < 0) {
-      printf(1, "unlink failed\n");
+      printf("unlink failed\n");
       exit();
     }
     if (write(fd, buf, sizeof(buf)) != sizeof(buf)) {
-      printf(1, "write failed\n");
+      printf("write failed\n");
       exit();
     }
     close(fd);
@@ -262,11 +262,11 @@ void test2() {
     wait();
   }
   if (umount("/m") < 0) {
-    printf(1, "umount failed\n");
+    printf("umount failed\n");
     exit();
   }    
 
-  printf(1, "test2 ok\n");
+  printf("test2 ok\n");
 }
 
 
@@ -277,24 +277,24 @@ void test3() {
   int i;
   char buf[1];
 
-  printf(1, "test3\n");
+  printf("test3\n");
 
   mkdir("/m");
   for (i = 0; i < NPID; i++) {
     if ((pid[i] = fork()) < 0) {
-      printf(1, "fork failed\n");
+      printf("fork failed\n");
       exit();
     }
     if (pid[i] == 0) {
       while(1) {
         if ((fd = open("/m/b", O_CREATE|O_WRONLY)) < 0) {
-          printf(1, "open write failed");
+          printf("open write failed");
           exit();
         }
         // may file, because fs was mounted/unmounted
         unlink("/m/b");
         if (write(fd, buf, sizeof(buf)) != sizeof(buf)) {
-          printf(1, "write failed\n");
+          printf("write failed\n");
           exit();
         }
         close(fd);
@@ -304,29 +304,29 @@ void test3() {
   }
   for (i = 0; i < NOP; i++) {
     if (mount("/disk1", "/m") < 0) {
-      printf(1, "mount failed\n");
+      printf("mount failed\n");
       exit();
     }    
     while (umount("/m") < 0) {
-      printf(1, "umount failed; try again %d\n", i);
+      printf("umount failed; try again %d\n", i);
     }    
   }
   for (i = 0; i < NPID; i++) {
     kill(pid[i]);
     wait();
   }
-  printf(1, "test3 ok\n");
+  printf("test3 ok\n");
 }
 
 void
 test4()
 {
-  printf(1, "test4\n");
+  printf("test4\n");
 
   mknod("disk1", DISK, 1);
   mkdir("/m");
   if (mount("/disk1", "/m") < 0) {
-      printf(1, "mount failed\n");
+      printf("mount failed\n");
       exit();
   }
   crash("/m/crashf", 1);
