@@ -184,18 +184,19 @@ qemu-gdb: $K/kernel .gdbinit fs.img
 ##  FOR submitting lab solutions
 ##
 
+-include conf/lab.mk
+
 grade:
 	@echo $(MAKE) clean
 	@$(MAKE) clean || \
 	  (echo "'make clean' failed.  HINT: Do you have another running instance of xv6?" && exit 1)
-	./grade-lab$(LAB) $(GRADEFLAGS)
+	./grade-lab-$(LAB) $(GRADEFLAGS)
 
 WEBSUB := https://6828.scripts.mit.edu/2019/handin.py
 
 handin: tarball-pref myapi.key
 	@SUF=$(LAB); \
-	test -f .suf && SUF=`cat .suf`; \
-	curl -f -F file=@lab$$SUF-handin.tar.gz -F key=\<myapi.key $(WEBSUB)/upload \
+	curl -f -F file=@lab-$$SUF-handin.tar.gz -F key=\<myapi.key $(WEBSUB)/upload \
 	    > /dev/null || { \
 		echo ; \
 		echo Submit seems to have failed.; \
@@ -206,9 +207,9 @@ handin-check:
 		echo No .git directory, is this a git repository?; \
 		false; \
 	fi
-	@if test "$$(git symbolic-ref HEAD)" != refs/heads/lab$(LAB); then \
+	@if test "$$(git symbolic-ref HEAD)" != refs/heads/$(LAB); then \
 		git branch; \
-		read -p "You are not on the lab$(LAB) branch.  Hand-in the current branch? [y/N] " r; \
+		read -p "You are not on the $(LAB) branch.  Hand-in the current branch? [y/N] " r; \
 		test "$$r" = y; \
 	fi
 	@if ! git diff-files --quiet || ! git diff-index --quiet --cached HEAD; then \
@@ -223,29 +224,16 @@ handin-check:
 		test "$$r" = y; \
 	fi
 
-UPSTREAM := $(shell git remote -v | grep "github.com/mit-pdos/xv6-riscv-fall19.git (fetch)" | awk '{split($$0,a," "); print a[1]}')
+UPSTREAM := $(shell git remote -v | grep -m 1 "mit-pdos/xv6-riscv-fall19" | awk '{split($$0,a," "); print a[1]}')
 
 tarball-pref: handin-check
 	@SUF=$(LAB); \
-	if test $(LAB) -eq 3 -o $(LAB) -eq 4; then \
-		read -p "Which part would you like to submit? [a, b, c (c for lab 4 only)]" p; \
-		if test "$$p" != a -a "$$p" != b; then \
-			if test ! $(LAB) -eq 4 -o ! "$$p" = c; then \
-				echo "Bad part \"$$p\""; \
-				exit 1; \
-			fi; \
-		fi; \
-		SUF="$(LAB)$$p"; \
-		echo $$SUF > .suf; \
-	else \
-		rm -f .suf; \
-	fi; \
-	git archive --format=tar HEAD > lab$$SUF-handin.tar; \
-	git diff $(UPSTREAM)/lab$(LAB) > /tmp/lab$$SUF-diff.patch; \
-	tar -rf lab$$SUF-handin.tar /tmp/lab$$SUF-diff.patch; \
-	gzip -c lab$$SUF-handin.tar > lab$$SUF-handin.tar.gz; \
-	rm lab$$SUF-handin.tar; \
-	rm /tmp/lab$$SUF-diff.patch; \
+	git archive --format=tar HEAD > lab-$$SUF-handin.tar; \
+	git diff $(UPSTREAM)/$(LAB) > /tmp/lab-$$SUF-diff.patch; \
+	tar -rf lab-$$SUF-handin.tar /tmp/lab-$$SUF-diff.patch; \
+	gzip -c lab-$$SUF-handin.tar > lab-$$SUF-handin.tar.gz; \
+	rm lab-$$SUF-handin.tar; \
+	rm /tmp/lab-$$SUF-diff.patch; \
 
 myapi.key:
 	@echo Get an API key for yourself by visiting $(WEBSUB)/
