@@ -561,21 +561,20 @@ def shell_script(script, terminate_match=None):
     done executing."""
 
     def setup_call_on_line(runner):
-        n = 0
-        buf = bytearray()
+        class context:
+            n = 0
+            buf = bytearray()
         def handle_output(output):
-            nonlocal buf
-            nonlocal n
-            buf.extend(output)
+            context.buf.extend(output)
             if terminate_match is not None:
-                if re.match(terminate_match, buf.decode('utf-8')):
+                if re.match(terminate_match, context.buf.decode('utf-8')):
                     raise TerminateTest
-            if b'$ ' in buf:
-                buf = bytearray()
-                if n < len(script):
-                    runner.qemu.write(script[n])
+            if b'$ ' in context.buf:
+                context.buf = bytearray()
+                if context.n < len(script):
+                    runner.qemu.write(script[context.n])
                     runner.qemu.write('\n')
-                    n += 1
+                    context.n += 1
                 else:
                     if terminate_match is None:
                         raise TerminateTest

@@ -40,8 +40,9 @@ def test_primes():
     r.run_qemu(shell_script([
         'primes', 'echo OK'
     ]))
-    primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31]
-    r.match(*('prime %d' % i for i in primes), '^OK$')
+    args = ['prime %d' % i for i in [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31]]
+    args.append('^OK$')
+    r.match(args)
 
 @test(10, "find, in current directory")
 def test_find_curdir():
