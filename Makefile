@@ -186,6 +186,13 @@ qemu-gdb: $K/kernel .gdbinit fs.img
 
 -include conf/lab.mk
 
+ifneq ($(V),@)
+GRADEFLAGS += -v
+endif
+
+print-gdbport:
+	@echo $(GDBPORT)
+
 grade:
 	@echo $(MAKE) clean
 	@$(MAKE) clean || \
