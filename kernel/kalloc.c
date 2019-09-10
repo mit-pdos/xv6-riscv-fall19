@@ -27,7 +27,9 @@ void
 kinit()
 {
   initlock(&kmem.lock, "kmem");
-  freerange(end, (void*)PHYSTOP);
+  void *p = (void*)PHYSTOP - MAXHEAP;
+  freerange(end+4096, p);
+  bd_init(p, p+MAXHEAP);
 }
 
 void

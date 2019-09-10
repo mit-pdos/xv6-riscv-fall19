@@ -186,3 +186,24 @@ void            virtio_disk_intr(int);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
+// Extra files for allocator lab
+
+
+// buddy.c
+void           bd_init(void*,void*);
+void           bd_free(void*);
+void           *bd_malloc(uint64);
+
+struct list {
+  struct list *next;
+  struct list *prev;
+};
+
+// list.c
+void lst_init(struct list*);
+void lst_remove(struct list*);
+void lst_push(struct list*, void *);
+void *lst_pop(struct list*);
+void lst_print(struct list*);
+int lst_empty(struct list*);
