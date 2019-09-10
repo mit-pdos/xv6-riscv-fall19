@@ -35,10 +35,11 @@ def test(points, title=None, parent=None):
 
             # Handle test dependencies
             if run_test.complete:
-                return
+                return run_test.ok
             run_test.complete = True
+            parent_failed = False
             if parent:
-                parent()
+                parent_failed = not parent()
 
             # Run the test
             fail = None
@@ -47,6 +48,8 @@ def test(points, title=None, parent=None):
             sys.stdout.write("%s: " % title)
             sys.stdout.flush()
             try:
+                if parent_failed:
+                    raise AssertionError('Parent failed: %s' % parent.__name__)
                 fn()
             except AssertionError as e:
                 fail = str(e)
@@ -67,10 +70,14 @@ def test(points, title=None, parent=None):
                 callback(fail)
             CURRENT_TEST = None
 
+            run_test.ok = not fail
+            return run_test.ok
+
         # Record test metadata on the test wrapper function
         run_test.__name__ = fn.__name__
         run_test.title = title
         run_test.complete = False
+        run_test.ok = False
         run_test.on_finish = []
         TESTS.append(run_test)
         return run_test
