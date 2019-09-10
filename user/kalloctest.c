@@ -16,7 +16,7 @@ main(int argc, char *argv[])
 {
   test0();
   test1();
-  exit();
+  exit(0);
 }
 
 void test0()
@@ -28,7 +28,7 @@ void test0()
     int pid = fork();
     if(pid < 0){
       printf("fork failed");
-      exit();
+      exit(-1);
     }
     if(pid == 0){
       for(i = 0; i < N; i++) {
@@ -40,15 +40,15 @@ void test0()
         a1 = sbrk(-4096);
         if (a1 != a + 4096) {
           printf("wrong sbrk\n");
-          exit();
+          exit(-1);
         }
       }
-      exit();
+      exit(0);
     }
   }
 
   for(int i = 0; i < NCHILD; i++){
-    wait();
+    wait(0);
   }
   int t = ntas();
   printf("test0 done: #test-and-sets = %d\n", t - n);
@@ -67,12 +67,12 @@ void test1()
     int fds[2];
     if(pipe(fds) != 0){
       printf("pipe() failed\n");
-      exit();
+      exit(-1);
     }
     int pid = fork();
     if(pid < 0){
       printf("fork failed");
-      exit();
+      exit(-1);
     }
     if(pid == 0){
       close(fds[0]);
@@ -84,10 +84,10 @@ void test1()
         *(int *)(a+4) = 1;
         if (write(fds[1], "x", 1) != 1) {
           printf("write failed");
-          exit();
+          exit(-1);
         }
       }
-      exit();
+      exit(-1);
     } else {
       close(fds[1]);
       pipes[i] = fds[0];
@@ -107,7 +107,7 @@ void test1()
   printf("total allocated number of pages: %d (out of %d)\n", tot, n);
   if(n - tot > 1000) {
     printf("test1 failed: cannot allocate enough memory\n");
-    exit();
+    exit(-1);
   }
   printf("test1 done\n");
 }

@@ -20,7 +20,7 @@ simpletest()
   char *p = sbrk(sz);
   if(p == (char*)0xffffffffffffffffL){
     printf("sbrk(%d) failed\n", sz);
-    exit();
+    exit(-1);
   }
 
   for(char *q = p; q < p + sz; q += 4096){
@@ -30,17 +30,17 @@ simpletest()
   int pid = fork();
   if(pid < 0){
     printf("fork() failed\n");
-    exit();
+    exit(-1);
   }
 
   if(pid == 0)
-    exit();
+    exit(0);
 
-  wait();
+  wait(0);
 
   if(sbrk(-sz) == (char*)0xffffffffffffffffL){
     printf("sbrk(-%d) failed\n", sz);
-    exit();
+    exit(-1);
   }
 
   printf("ok\n");
@@ -62,19 +62,19 @@ threetest()
   char *p = sbrk(sz);
   if(p == (char*)0xffffffffffffffffL){
     printf("sbrk(%d) failed\n", sz);
-    exit();
+    exit(-1);
   }
 
   pid1 = fork();
   if(pid1 < 0){
     printf("fork failed\n");
-    exit();
+    exit(-1);
   }
   if(pid1 == 0){
     pid2 = fork();
     if(pid2 < 0){
       printf("fork failed");
-      exit();
+      exit(-1);
     }
     if(pid2 == 0){
       for(char *q = p; q < p + (sz/5)*4; q += 4096){
@@ -83,35 +83,35 @@ threetest()
       for(char *q = p; q < p + (sz/5)*4; q += 4096){
         if(*(int*)q != getpid()){
           printf("wrong content\n");
-          exit();
+          exit(-1);
         }
       }
-      exit();
+      exit(-1);
     }
     for(char *q = p; q < p + (sz/2); q += 4096){
       *(int*)q = 9999;
     }
-    exit();
+    exit(0);
   }
 
   for(char *q = p; q < p + sz; q += 4096){
     *(int*)q = getpid();
   }
 
-  wait();
+  wait(0);
 
   sleep(1);
 
   for(char *q = p; q < p + sz; q += 4096){
     if(*(int*)q != getpid()){
       printf("wrong content\n");
-      exit();
+      exit(-1);
     }
   }
 
   if(sbrk(-sz) == (char*)0xffffffffffffffffL){
     printf("sbrk(-%d) failed\n", sz);
-    exit();
+    exit(-1);
   }
 
   printf("ok\n");
@@ -136,41 +136,41 @@ filetest()
   for(int i = 0; i < 4; i++){
     if(pipe(fds) != 0){
       printf("pipe() failed\n");
-      exit();
+      exit(-1);
     }
     int pid = fork();
     if(pid < 0){
       printf("fork failed\n");
-      exit();
+      exit(-1);
     }
     if(pid == 0){
       sleep(1);
       if(read(fds[0], buf, sizeof(i)) != sizeof(i)){
         printf("read failed\n");
         kill(parent);
-        exit();
+        exit(-1);
       }
       sleep(1);
       int j = *(int*)buf;
       if(j != i){
         printf("read the wrong value\n");
         kill(parent);
-        exit();
+        exit(-1);
       }
-      exit();
+      exit(0);
     }
     if(write(fds[1], &i, sizeof(i)) != sizeof(i)){
       printf("write failed\n");
-      exit();
+      exit(-1);
     }
   }
 
   for(int i = 0; i < 4; i++)
-    wait();
+    wait(0);
 
   if(buf[0] != 99){
     printf("child overwrote parent\n");
-    exit();
+    exit(-1);
   }
 
   printf("ok\n");
@@ -192,5 +192,5 @@ main(int argc, char *argv[])
 
   printf("ALL COW TESTS PASSED\n");
 
-  exit();
+  exit(0);
 }

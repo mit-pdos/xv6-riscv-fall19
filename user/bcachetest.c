@@ -17,7 +17,7 @@ main(int argc, char *argv[])
 {
   test0();
   test1();
-  exit();
+  exit(0);
 }
 
 void
@@ -30,7 +30,7 @@ createfile(char *file, int nblock)
   fd = open(file, O_CREATE | O_RDWR);
   if(fd < 0){
     printf("test0 create %s failed\n", file);
-    exit();
+    exit(-1);
   }
   for(i = 0; i < nblock; i++) {
     if(write(fd, buf, sizeof(buf)) != sizeof(buf)) {
@@ -49,12 +49,12 @@ readfile(char *file, int nblock)
   
   if ((fd = open(file, O_RDONLY)) < 0) {
     printf("test0 open %s failed\n", file);
-    exit();
+    exit(-1);
   }
   for (i = 0; i < nblock; i++) {
     if(read(fd, buf, sizeof(buf)) != sizeof(buf)) {
       printf("read %s failed for block %d (%d)\n", file, i, nblock);
-      exit();
+      exit(-1);
     }
   }
   close(fd);
@@ -76,19 +76,19 @@ test0()
     int pid = fork();
     if(pid < 0){
       printf("fork failed");
-      exit();
+      exit(-1);
     }
     if(pid == 0){
       for (i = 0; i < N; i++) {
         readfile(file, 1);
       }
       unlink(file);
-      exit();
+      exit(-1);
     }
   }
 
   for(int i = 0; i < NCHILD; i++){
-    wait();
+    wait(0);
   }
   printf("test0 done: #test-and-sets: %d\n", ntas() - n);
 }
@@ -113,7 +113,7 @@ void test1()
     int pid = fork();
     if(pid < 0){
       printf("fork failed");
-      exit();
+      exit(-1);
     }
     if(pid == 0){
       if (i==0) {
@@ -121,19 +121,19 @@ void test1()
           readfile(file, BIG);
         }
         unlink(file);
-        exit();
+        exit(0);
       } else {
         for (i = 0; i < N; i++) {
           readfile(file, 1);
         }
         unlink(file);
       }
-      exit();
+      exit(0);
     }
   }
 
   for(int i = 0; i < 2; i++){
-    wait();
+    wait(0);
   }
   printf("test1 done\n");
 }
