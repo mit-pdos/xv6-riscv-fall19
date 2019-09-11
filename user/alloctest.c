@@ -11,7 +11,6 @@ test0() {
   enum { NCHILD = 50, NFD = 10};
   int i, j;
   int fd;
-  int pfds[2];
 
   printf("filetest: start\n");
   
@@ -20,11 +19,6 @@ test0() {
     exit(-1);
   }
 
-  if(pipe(pfds) < 0){
-    printf("pipe() failed\n");
-    exit(-1);
-  }
-    
   for (i = 0; i < NCHILD; i++) {
     int pid = fork();
     if(pid < 0){
@@ -32,32 +26,27 @@ test0() {
       exit(-1);
     }
     if(pid == 0){
-      close(pfds[0]);
       for(j = 0; j < NFD; j++) {
         if ((fd = open("README", O_RDONLY)) < 0) {
-          // the open() failed.
-          write(pfds[1], "x", 1); // tell parent we failed.
+          // the open() failed; exit with -1
           exit(-1);
         }
       }
       sleep(10);
-      exit(-1);
+      exit(0);  // no errors; exit with 0.
     }
   }
 
-  close(pfds[1]);
-  char buf[1];
-  int n = read(pfds[0], buf, 1);
-
+  int xstatus;
   for(int i = 0; i < NCHILD; i++){
-    wait(0);
+    wait(&xstatus);
+    if(xstatus == -1) {
+       printf("filetest: FAILED\n");
+       exit(-1);
+    }
   }
 
-  if(n > 0){
-    printf("filetest: FAILED\n");
-  } else {
-    printf("filetest: OK\n");
-  }
+   printf("filetest: OK\n");
 }
 
 // Allocate all free memory and count how it is
