@@ -8,8 +8,9 @@ r = Runner(save("xv6.out"))
 @test(0, "running nsh tests")
 def test_nsh_top():
     with open('user/nsh.c') as f:
-        if 'malloc' in f.read() or 'sbrk' in f.read():
-            raise AssertionError('Use of malloc() is forbidden')
+        contents = f.read()
+        if 'malloc' in contents or 'sbrk' in contents:
+            raise AssertionError('Use of malloc() / sbrk() is forbidden')
     r.run_qemu(shell_script([
         'testsh nsh'
     ]))
