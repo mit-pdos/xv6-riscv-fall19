@@ -188,13 +188,14 @@ log2(uint64 n) {
   return k;
 }
 
+// The buddy allocator manages the memory from base till end.
 void
 bd_init(void *base, void *end) {
 
   initlock(&lock, "buddy");
 
-  // YOUR CODE HERE TO INITIALIZE THE BUDDY ALLOCATOR.
-  // FEEL FREE TO BORROW CODE FROM bd_init() in the lecture notes.
+  // YOUR CODE HERE TO INITIALIZE THE BUDDY ALLOCATOR.  FEEL FREE TO
+  // BORROW CODE FROM bd_init() in the lecture notes.
 
   return;
 }
