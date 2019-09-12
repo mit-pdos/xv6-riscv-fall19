@@ -58,12 +58,12 @@ void bit_clear(char *array, int index) {
 
 // Print a vector as ranges set to 1
 void
-bd_print_vector(int k, char *vector) {
+bd_print_vector(char *vector, int len) {
   int last, lb;
   
   last = 1;
   lb = 0;
-  for (int b = 0; b < NBLK(k); b++) {
+  for (int b = 0; b < len; b++) {
     if (last == bit_isset(vector, b))
       continue;
     if(last == 1)
@@ -72,7 +72,7 @@ bd_print_vector(int k, char *vector) {
     last = bit_isset(vector, b);
   }
   if(lb == 0 || last == 1) {
-    printf(" [%d, %d)", lb, NBLK(k));
+    printf(" [%d, %d)", lb, len);
   }
   printf("\n");
 }
@@ -84,10 +84,10 @@ bd_print() {
     printf("size %d (blksz %d nblk %d): free list: ", k, BLK_SIZE(k), NBLK(k));
     lst_print(&bd_sizes[k].free);
     printf("  alloc:");
-    bd_print_vector(k, bd_sizes[k].alloc);
+    bd_print_vector(bd_sizes[k].alloc, NBLK(k));
     if(k > 0) {
       printf("  split:");
-      bd_print_vector(k, bd_sizes[k].split);
+      bd_print_vector(bd_sizes[k].split, NBLK(k));
     }
   }
 }
