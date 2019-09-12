@@ -212,7 +212,7 @@ log2(uint64 n) {
   return k;
 }
 
-// Mark blocks from start to stop, starting at size 0, as allocated. 
+// Mark memory from [start, stop), starting at size 0, as allocated. 
 void
 bd_mark(void *start, void *stop)
 {
@@ -350,6 +350,5 @@ bd_init(void *base, void *end) {
     printf("free %d %d\n", free, BLK_SIZE(MAXSIZE)-meta-unavailable);
     panic("bd_init: free mem");
   }
-  bd_print();
 }
 
