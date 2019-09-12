@@ -56,23 +56,38 @@ void bit_clear(char *array, int index) {
   array[index/8] = (b & ~m);
 }
 
+// Print a vector as ranges set to 1
+void
+bd_print_vector(int k, char *vector) {
+  int last, lb;
+  
+  last = 1;
+  lb = 0;
+  for (int b = 0; b < NBLK(k); b++) {
+    if (last == bit_isset(vector, b))
+      continue;
+    if(last == 1)
+      printf(" [%d, %d)", lb, b);
+    lb = b;
+    last = bit_isset(vector, b);
+  }
+  if(lb == 0 || last == 1) {
+    printf(" [%d, %d)", lb, NBLK(k));
+  }
+  printf("\n");
+}
+
 // Print buddy's data structures
 void
 bd_print() {
   for (int k = 0; k < nsizes; k++) {
-    printf("size %d (%d):", k, BLK_SIZE(k));
+    printf("size %d (blksz %d nblk %d): free list: ", k, BLK_SIZE(k), NBLK(k));
     lst_print(&bd_sizes[k].free);
     printf("  alloc:");
-    for (int b = 0; b < NBLK(k); b++) {
-     printf(" %d", bit_isset(bd_sizes[k].alloc, b));
-    }
-    printf("\n");
+    bd_print_vector(k, bd_sizes[k].alloc);
     if(k > 0) {
       printf("  split:");
-      for (int b = 0; b < NBLK(k); b++) {
-        printf(" %d", bit_isset(bd_sizes[k].split, b));
-      }
-      printf("\n");
+      bd_print_vector(k, bd_sizes[k].split);
     }
   }
 }
@@ -134,6 +149,7 @@ bd_malloc(uint64 nbytes)
     lst_push(&bd_sizes[k-1].free, q);
   }
   release(&lock);
+
   return p;
 }
 
@@ -148,7 +164,8 @@ size(char *p) {
   return 0;
 }
 
-// Free p
+// Free memory pointed to by p, which was earlier allocated using
+// bd_malloc.
 void
 bd_free(void *p) {
   void *q;
@@ -332,7 +349,9 @@ bd_init(void *base, void *end) {
   int free = bd_initfree(p, bd_end);
   
   // check if the amount that is free is what we expect
-  if(free != BLK_SIZE(MAXSIZE)-meta-unavailable)
-    panic("bd_init");
+  if(free != BLK_SIZE(MAXSIZE)-meta-unavailable) {
+    printf("free %d %d\n", free, BLK_SIZE(MAXSIZE)-meta-unavailable);
+    panic("bd_init: free mem");
+  }
 }
 
