@@ -38,15 +38,18 @@ test0() {
   }
 
   int xstatus;
+  int failed = 0;
   for(int i = 0; i < NCHILD; i++){
     wait(&xstatus);
     if(xstatus == -1) {
-       printf("filetest: FAILED\n");
-       exit(-1);
+       failed = 1;
     }
   }
 
-   printf("filetest: OK\n");
+  if(failed)
+    printf("filetest: FAILED\n");
+  else
+    printf("filetest: OK\n");
 }
 
 // Allocate all free memory and count how it is
