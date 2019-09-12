@@ -241,11 +241,26 @@ bd_mark(void *start, void *stop, void *left)
   }
 }
 
-// Initialize the free lists for each size k.  If a block is marked as
-// allocated and the buddy is free, then the buddy should be put on
-// the free list. For each size k, there are only two possible buddies
-// that may have to be put on the list: the buddy of bd_left and the
-// buddy of bd_right.
+// If a block is marked as allocated and the buddy is free, then the
+// buddy should be put on the free list, or vice versa.
+int
+bd_initfree_pair(int k, int bi) {
+  int buddy = (bi % 2 == 0) ? bi+1 : bi-1;
+  int free = 0;
+  if(bit_isset(bd_sizes[k].alloc, bi) !=  bit_isset(bd_sizes[k].alloc, buddy)) {
+    // one of the pair is free
+    free = BLK_SIZE(k);
+    if(bit_isset(bd_sizes[k].alloc, bi))
+      lst_push(&bd_sizes[k].free, addr(k, buddy));   // put buddy on free list
+    else
+      lst_push(&bd_sizes[k].free, addr(k, bi));      // put bi on free list
+  }
+  return free;
+}
+  
+// Initialize the free lists for each size k.  For each size k, there
+// are only two pairs that may have a buddy that should be on free list:
+// bd_left and bd_right.
 int
 bd_initfree(void *bd_left, void *bd_right) {
   int free = 0;
@@ -253,22 +268,10 @@ bd_initfree(void *bd_left, void *bd_right) {
   for (int k = 0; k < MAXSIZE; k++) {   // skip max size
     int left = blk_index_next(k, bd_left);
     int right = blk_index(k, bd_right);
-    if(!bit_isset(bd_sizes[k].alloc, left)) {
-      int buddy = left-1;
-      if((left % 2 == 1) && bit_isset(bd_sizes[k].alloc, buddy)) {
-        free += BLK_SIZE(k);
-        lst_push(&bd_sizes[k].free, addr(k, left));
-      }
-    }
+    free += bd_initfree_pair(k, left);
     if(right <= left)
       continue;
-    if(bit_isset(bd_sizes[k].alloc, right)) {
-      int buddy = right - 1;
-      if((right % 2 == 1) && !bit_isset(bd_sizes[k].alloc, buddy)) {
-        free += BLK_SIZE(k);
-        lst_push(&bd_sizes[k].free, addr(k, buddy));
-      }
-    }
+    free += bd_initfree_pair(k, right);
   }
   return free;
 }
@@ -347,7 +350,7 @@ bd_init(void *base, void *end) {
   
   // initialize free lists for each size k
   int free = bd_initfree(p, bd_end);
-  
+
   // check if the amount that is free is what we expect
   if(free != BLK_SIZE(MAXSIZE)-meta-unavailable) {
     printf("free %d %d\n", free, BLK_SIZE(MAXSIZE)-meta-unavailable);
