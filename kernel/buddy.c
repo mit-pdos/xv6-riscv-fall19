@@ -118,7 +118,7 @@ void *addr(int k, int bi) {
   return (char *) bd_base + n;
 }
 
-// allocate nbytes, but malloc won't return anything smaller LEAF_SIZE
+// allocate nbytes, but malloc won't return anything smaller than LEAF_SIZE
 void *
 bd_malloc(uint64 nbytes)
 {
@@ -234,8 +234,8 @@ bd_mark(void *start, void *stop)
   }
 }
 
-// If a block is marked as allocated and the buddy is free, then the
-// buddy should be put on the free list, or vice versa.
+// If a block is marked as allocated and the buddy is free, put the
+// buddy on the free list at size k.
 int
 bd_initfree_pair(int k, int bi) {
   int buddy = (bi % 2 == 0) ? bi+1 : bi-1;
