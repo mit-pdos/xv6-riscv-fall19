@@ -56,7 +56,7 @@ void bit_clear(char *array, int index) {
   array[index/8] = (b & ~m);
 }
 
-// Print a vector as ranges set to 1
+// Print a bit vector as a list of ranges of 1 bits
 void
 bd_print_vector(char *vector, int len) {
   int last, lb;
@@ -212,13 +212,11 @@ log2(uint64 n) {
   return k;
 }
 
-// Mark blocks from start to stop, starting at size 0, as
-// allocated. Blocks till left already have been allocated in a
-// previous bd_mark(), so skip marking blocks from left to start.
+// Mark blocks from start to stop, starting at size 0, as allocated. 
 void
-bd_mark(void *start, void *stop, void *left)
+bd_mark(void *start, void *stop)
 {
-  int bi, bj, bs;
+  int bi, bj;
 
   if (((uint64) start % LEAF_SIZE != 0) || ((uint64) stop % LEAF_SIZE != 0))
     panic("bd_mark");
@@ -226,11 +224,6 @@ bd_mark(void *start, void *stop, void *left)
   for (int k = 0; k < nsizes; k++) {
     bi = blk_index(k, start);
     bj = blk_index_next(k, stop);
-    bs = blk_index_next(k, left);
-
-    if (bi < bs)
-      bi = bs;
-
     for(; bi < bj; bi++) {
       if(k > 0) {
         // if a block is allocated at size k, mark it as split too.
@@ -276,17 +269,16 @@ bd_initfree(void *bd_left, void *bd_right) {
   return free;
 }
 
-// Mark blocks that buddy uses for its own data structures.
+// Mark the range [bd_base,p) as allocated
 int
 bd_mark_data_structures(char *p) {
   int meta = p - (char*)bd_base;
   printf("bd: %d meta bytes for managing %d bytes of memory\n", meta, BLK_SIZE(MAXSIZE));
-  bd_mark(bd_base, p, bd_base);
+  bd_mark(bd_base, p);
   return meta;
 }
 
-// Mark blocks that buddy cannot be used because there is no memory
-// there.
+// Mark the range [end, HEAPSIZE) as allocated
 int
 bd_mark_unavailable(void *end, void *left) {
   int unavailable = BLK_SIZE(MAXSIZE)-(end-bd_base);
@@ -295,7 +287,7 @@ bd_mark_unavailable(void *end, void *left) {
   printf("bd: 0x%x bytes unavailable\n", unavailable);
 
   void *bd_end = bd_base+BLK_SIZE(MAXSIZE)-unavailable;
-  bd_mark(bd_end, bd_base+BLK_SIZE(MAXSIZE), left);
+  bd_mark(bd_end, bd_base+BLK_SIZE(MAXSIZE));
   return unavailable;
 }
 
@@ -341,10 +333,12 @@ bd_init(void *base, void *end) {
   }
   p = (char *) ROUNDUP((uint64) p, LEAF_SIZE);
 
-  // done allocating; mark the memory that we used for the buddy's
-  // data structure as allocated and mark unavailable memory as
-  // allocated so that buddy will not allocate them.
+  // done allocating; mark the memory range [base, p) as allocated, so
+  // that buddy will not hand out that memory.
   int meta = bd_mark_data_structures(p);
+  
+  // mark the unavailable memory range [end, HEAP_SIZE) as allocated,
+  // so that buddy will not hand out that memory.
   int unavailable = bd_mark_unavailable(end, p);
   void *bd_end = bd_base+BLK_SIZE(MAXSIZE)-unavailable;
   
@@ -356,5 +350,6 @@ bd_init(void *base, void *end) {
     printf("free %d %d\n", free, BLK_SIZE(MAXSIZE)-meta-unavailable);
     panic("bd_init: free mem");
   }
+  bd_print();
 }
 
