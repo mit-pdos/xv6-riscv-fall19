@@ -21,7 +21,7 @@ main(int argc, char *argv[])
 {
   test0();
   test1();
-  exit();
+  exit(0);
 }
 
 volatile static int count;
