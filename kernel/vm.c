@@ -15,6 +15,8 @@ extern char etext[];  // kernel.ld sets this to end of kernel code.
 
 extern char trampoline[]; // trampoline.S
 
+void print(pagetable_t);
+
 /*
  * create a direct-map page table for the kernel and
  * turn on paging. called early, in supervisor mode.
@@ -441,4 +443,60 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   } else {
     return -1;
   }
+}
+
+void
+print_pte(uint64 pte, int level, int index) {
+  if((pte & PTE_V) != 0) {
+      for(int i = 0; i < 3-level; i++) {
+        printf(" ..");
+      }
+      printf("%d: pte %p pa %p\n", index, pte, PTE2PA(pte));
+    }
+}
+
+uint64
+print_level(pagetable_t pagetable, int level)
+{
+  uint64 lastpa = 0;
+  pte_t lastpte = 0;
+  int lastindex = 0;
+  int printlast = 0;
+  for(int i = 0; i < 512; i++) {
+    pte_t pte = pagetable[i];
+
+    // if(pte != 0) printf("%d: pte %x %d %d\n", i, pte, printlast);
+
+    if(pte & PTE_V) {
+      uint64 next = PTE2PA(pte);
+      if((next - lastpa != 4096) || i == 0 || i == 511) {
+        print_pte(pte, level, i);
+        printlast = i;
+      }
+    } else {
+      if((lastpte & PTE_V) && printlast != i-1) {
+        print_pte(lastpte, level, lastindex);
+        printlast = i;
+      }
+    }
+    
+    if(pte & PTE_V){
+      uint64 child = PTE2PA(pte);
+      if(level > 0) {
+        lastpa = print_level((pagetable_t)child, level-1);
+      } else {
+        lastpa = child;
+      }
+    }
+    lastpte = pte;
+    lastindex = i;
+  }
+  
+  return lastpa;
+}
+
+void
+print(pagetable_t pagetable) {
+  printf("page table %p\n", pagetable);
+  print_level(pagetable, 2);
 }
