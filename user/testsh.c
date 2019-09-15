@@ -291,7 +291,7 @@ t7(int *ok)
   char cmd[64];
   strcpy(cmd, "cat ");
   strcpy(cmd + strlen(cmd), name);
-  strcpy(cmd + strlen(cmd), " | cat");
+  strcpy(cmd + strlen(cmd), " | cat\n");
   
   if(one(cmd, data, 1) == 0){
     printf("FAIL\n");
@@ -309,7 +309,7 @@ t8(int *ok)
 {
   printf("pipe and redirects: ");
   
-  if(one("grep suggestions < README | wc > testsh.out", "", 1) == 0){
+  if(one("grep suggestions < README | wc > testsh.out\n", "", 1) == 0){
     printf("FAIL\n");
     *ok = 0;
   } else {
