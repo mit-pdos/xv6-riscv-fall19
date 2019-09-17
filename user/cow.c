@@ -170,7 +170,6 @@ filetest()
   }
 
   if(xstatus != 0) {
-    printf("error\n");
     exit(1);
   }
 
