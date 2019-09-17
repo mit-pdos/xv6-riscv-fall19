@@ -165,12 +165,8 @@ filetest()
   for(int i = 0; i < 4; i++) {
     wait(&xstatus);
     if(xstatus != 0) {
-      break;
+      exit(1);
     }
-  }
-
-  if(xstatus != 0) {
-    exit(1);
   }
 
   if(buf[0] != 99){
