@@ -38,15 +38,14 @@ test0() {
   }
 
   int xstatus;
-  int failed = 0;
   for(int i = 0; i < NCHILD; i++){
     wait(&xstatus);
-    if(xstatus == -1) {
-       failed = 1;
+    if(xstatus != 0) {
+      break;
     }
   }
 
-  if(failed)
+  if(xstatus != 0)
     printf("filetest: FAILED\n");
   else
     printf("filetest: OK\n");
