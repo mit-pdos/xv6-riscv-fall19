@@ -127,8 +127,6 @@ char junk3[4096];
 void
 filetest()
 {
-  int parent = getpid();
-  
   printf("file: ");
   
   buf[0] = 99;
@@ -146,31 +144,39 @@ filetest()
     if(pid == 0){
       sleep(1);
       if(read(fds[0], buf, sizeof(i)) != sizeof(i)){
-        printf("read failed\n");
-        kill(parent);
-        exit(-1);
+        printf("error: read failed\n");
+        exit(1);
       }
       sleep(1);
       int j = *(int*)buf;
       if(j != i){
-        printf("read the wrong value\n");
-        kill(parent);
-        exit(-1);
+        printf("error: read the wrong value\n");
+        exit(1);
       }
       exit(0);
     }
     if(write(fds[1], &i, sizeof(i)) != sizeof(i)){
-      printf("write failed\n");
+      printf("error: write failed\n");
       exit(-1);
     }
   }
 
-  for(int i = 0; i < 4; i++)
-    wait(0);
+  int xstatus = 0;
+  for(int i = 0; i < 4; i++) {
+    wait(&xstatus);
+    if(xstatus != 0) {
+      break;
+    }
+  }
+
+  if(xstatus != 0) {
+    printf("error\n");
+    exit(1);
+  }
 
   if(buf[0] != 99){
-    printf("child overwrote parent\n");
-    exit(-1);
+    printf("error: child overwrote parent\n");
+    exit(1);
   }
 
   printf("ok\n");
