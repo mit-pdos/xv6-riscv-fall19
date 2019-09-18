@@ -135,7 +135,7 @@ UPROGS=\
 	$U/_usertests\
 	$U/_wc\
 	$U/_zombie\
-	$U/_cow\
+	$U/_cowtest\
 	$U/_uthread\
 	$U/_call\
 	$U/_testsh\
