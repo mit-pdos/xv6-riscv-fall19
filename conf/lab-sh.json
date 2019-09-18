@@ -1,0 +1,8 @@
+{
+  "name": "sh",
+  "commit": "2ccaf15fec61b141009ffa8dc1ef5fd56fd6791b",
+  "keep": [
+    "Makefile",
+    "user/nsh.c"
+  ]
+}
