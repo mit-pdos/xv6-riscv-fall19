@@ -1,1 +1,1 @@
-LAB=sh
+LAB=alloc
