@@ -333,11 +333,12 @@ sys_open(void)
   if(ip->type == T_DEVICE){
     f->type = FD_DEVICE;
     f->major = ip->major;
+    f->minor = ip->minor;
   } else {
     f->type = FD_INODE;
-    f->off = 0;
   }
   f->ip = ip;
+  f->off = 0;
   f->readable = !(omode & O_WRONLY);
   f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
 
