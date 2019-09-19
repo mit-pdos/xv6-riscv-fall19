@@ -5,14 +5,21 @@ from gradelib import *
 
 r = Runner(save("xv6.out"))
 
-@test(70, "alloctest")
+@test(30, "alloctest")
 def test_alloctest():
     r.run_qemu(shell_script([
         'alloctest'
     ]))
-    r.match("^filetest: OK$", "^memtest: OK$")
+    r.match("^filetest: OK$")
 
-@test(30, "usertests")
+@test(50, "alloctest")
+def test_alloctest():
+    r.run_qemu(shell_script([
+        'alloctest'
+    ]))
+    r.match("^memtest: OK$")
+
+@test(20, "usertests")
 def test_usertests():
     r.run_qemu(shell_script([
         'usertests'
