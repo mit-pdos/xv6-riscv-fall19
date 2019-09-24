@@ -1,6 +1,6 @@
 {
   "name": "sh",
-  "commit": "d84809e3a5c8a5bd8f0795c79ec609a8f30fb1ae",
+  "commit": "0e30e70ca931b702773680921aab47aac875f586",
   "keep": [
     "Makefile",
     "user/nsh.c"
