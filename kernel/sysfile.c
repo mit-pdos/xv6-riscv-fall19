@@ -475,3 +475,82 @@ sys_pipe(void)
   }
   return 0;
 }
+
+// send(uint32 dst, uint16 dport, uint16 sport, char *buf, int n)
+uint64
+sys_send(void)
+{
+  struct proc *p = myproc();
+  int udp_send(uint32, uint16, uint16, const char *, int);
+  uint32 dst;
+  uint32 dport;
+  uint32 sport;
+  uint64 addr;
+  int n;
+  
+  argint(0, (int*)&dst);
+  argint(1, (int*)&dport);
+  argint(2, (int*)&sport);
+  argaddr(3, &addr);
+  argint(4, &n);
+
+  if(n < 0 || n > PGSIZE)
+    return -1;
+
+  char *buf = kalloc();
+  if(buf == 0)
+    panic("sys_send kalloc");
+
+  if(copyin(p->pagetable, buf, addr, n) != 0){
+    kfree(buf);
+    return -1;
+  }
+
+  int ret = udp_send(dst, dport, sport, buf, n);
+
+  kfree(buf);
+  
+  return ret;
+}
+
+// recv(uint32 *src, uint16 *sport, uint16 *dport, char *buf, int n);
+uint64
+sys_recv(void)
+{
+  struct proc *p = myproc();
+  int udp_recv(uint32 *srcp, uint16 *sportp, uint16 *dportp, char *buf, int bufmax);
+  uint64 srcp, sportp, dportp;
+  uint64 addr;
+  int n;
+
+  argaddr(0, &srcp);
+  argaddr(1, &sportp);
+  argaddr(2, &dportp);
+  argaddr(3, &addr);
+  argint(4, &n);
+
+  if(n < 0 || n > PGSIZE)
+    return -1;
+
+  char *buf = kalloc();
+  if(buf == 0)
+    panic("sys_recv kalloc");
+
+  uint32 src;
+  uint16 sport, dport;
+  int cc = udp_recv(&src, &sport, &dport, buf, PGSIZE);
+
+  if(cc > n)
+    cc = n;
+
+  if(cc >= 0){
+    copyout(p->pagetable, srcp, (char*)&src, 4);
+    copyout(p->pagetable, sportp, (char*)&sport, 2);
+    copyout(p->pagetable, dportp, (char*)&dport, 2);
+    copyout(p->pagetable, addr, buf, cc);
+  }
+
+  kfree(buf);
+
+  return cc;
+}

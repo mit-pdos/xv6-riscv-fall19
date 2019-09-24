@@ -25,6 +25,7 @@ main()
     binit();         // buffer cache
     fileinit();      // file table
     virtio_disk_init(); // emulated hard disk
+    e1000init();
     userinit();      // first user process
     started = 1;
   } else {

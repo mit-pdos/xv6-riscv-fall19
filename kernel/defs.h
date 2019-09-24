@@ -20,6 +20,10 @@ void            consoleinit(void);
 void            consoleintr(int);
 void            consputc(int);
 
+// e1000.c
+void            e1000init();
+void            e1000_intr();
+
 // exec.c
 int             exec(char*, char**);
 

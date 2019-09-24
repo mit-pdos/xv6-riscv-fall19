@@ -11,36 +11,40 @@
 void
 plicinit(void)
 {
+  // XXX need a PLIC_PRIORITY(irq) macro
+  
   // set desired IRQ priorities non-zero (otherwise disabled).
   *(uint32*)(PLIC + UART0_IRQ*4) = 1;
   *(uint32*)(PLIC + VIRTIO0_IRQ*4) = 1;
+
+  // PCIE IRQs are 32 to 35
+  for(int irq = 1; irq < 0x35; irq++){
+    *(uint32*)(PLIC + irq*4) = 1;
+  }
 }
 
 void
 plicinithart(void)
 {
   int hart = cpuid();
+
+  // XXX need a way to get at SENABLE for IRQs 32..63
+  // XXX manual says allowed to use 64-bit ops.
   
   // set uart's enable bit for this hart's S-mode. 
-  *(uint32*)PLIC_SENABLE(hart)= (1 << UART0_IRQ) | (1 << VIRTIO0_IRQ);
+  uint32 enabled = 0;
+  enabled |= (1 << UART0_IRQ);
+  enabled |= (1 << VIRTIO0_IRQ);
+  *(uint32*)PLIC_SENABLE(hart) = enabled;
+
+  // hack to get at next 32 IRQs for e1000
+  *(uint32*)(PLIC_SENABLE(hart)+4) = 0xffffffff;
 
   // set this hart's S-mode priority threshold to 0.
   *(uint32*)PLIC_SPRIORITY(hart) = 0;
 }
 
-// return a bitmap of which IRQs are waiting
-// to be served.
-uint64
-plic_pending(void)
-{
-  uint64 mask;
-
-  //mask = *(uint32*)(PLIC + 0x1000);
-  //mask |= (uint64)*(uint32*)(PLIC + 0x1004) << 32;
-  mask = *(uint64*)PLIC_PENDING;
-
-  return mask;
-}
+// XXX got rid of plic_pending
 
 // ask the PLIC what interrupt we should serve.
 int
