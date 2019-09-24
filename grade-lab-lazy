@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+
+import re
+from gradelib import *
+
+r = Runner(save("xv6.out"))
+
+PTE_PRINT = """page table 0x0000000087f6e000
+ ..0: pte 0x0000000021fda801 pa 0x0000000087f6a000
+ .. ..0: pte 0x0000000021fda401 pa 0x0000000087f69000
+ .. .. ..0: pte 0x0000000021fdac1f pa 0x0000000087f6b000
+ .. .. ..1: pte 0x0000000021fda00f pa 0x0000000087f68000
+ .. .. ..2: pte 0x0000000021fd9c1f pa 0x0000000087f67000
+ ..255: pte 0x0000000021fdb401 pa 0x0000000087f6d000
+ .. ..511: pte 0x0000000021fdb001 pa 0x0000000087f6c000
+ .. .. ..510: pte 0x0000000021fdd807 pa 0x0000000087f76000
+ .. .. ..511: pte 0x000000002000200b pa 0x0000000080008000"""
+
+@test(0, "running lazytests")
+def test_lazytests():
+    r.run_qemu(shell_script([
+        'lazytests'
+    ]))
+
+@test(10, "lazy: pte printout", parent=test_lazytests)
+def test_filetest():
+    [r.match("^{}$".format(l)) for l in PTE_PRINT.splitlines()]
+
+@test(20, "lazy: map", parent=test_lazytests)
+def test_filetest():
+    r.match("^test lazy unmap: OK$")
+
+@test(20, "lazy: unmap", parent=test_lazytests)
+def test_memtest():
+    r.match("test lazy alloc: OK$")
+
+@test(50, "usertests")
+def test_usertests():
+    r.run_qemu(shell_script([
+        'usertests'
+    ]), timeout=150)
+    r.match('^ALL TESTS PASSED$')
+
+run_tests()
