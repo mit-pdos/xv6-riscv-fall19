@@ -14,6 +14,8 @@ void            binit(void);
 struct buf*     bread(uint, uint);
 void            brelse(struct buf*);
 void            bwrite(struct buf*);
+void            bpin(struct buf*);
+void            bunpin(struct buf*);
 
 // console.c
 void            consoleinit(void);
@@ -37,12 +39,12 @@ int             filestat(struct file*, uint64 addr);
 int             filewrite(struct file*, uint64, int n);
 
 // fs.c
-void            readsb(int dev, struct superblock *sb);
+void            fsinit(int);
 int             dirlink(struct inode*, char*, uint);
 struct inode*   dirlookup(struct inode*, char*, uint*);
 struct inode*   ialloc(uint, short);
 struct inode*   idup(struct inode*);
-void            iinit(int dev);
+void            iinit();
 void            ilock(struct inode*);
 void            iput(struct inode*);
 void            iunlock(struct inode*);
@@ -66,7 +68,7 @@ void            kfree(void *);
 void            kinit();
 
 // log.c
-void            initlog(int dev);
+void            initlog(int, struct superblock*);
 void            log_write(struct buf*);
 void            begin_op();
 void            end_op();
@@ -84,7 +86,7 @@ void            printfinit(void);
 
 // proc.c
 int             cpuid(void);
-void            exit(void);
+void            exit(int);
 int             fork(void);
 int             growproc(int);
 pagetable_t     proc_pagetable(struct proc *);
@@ -99,7 +101,7 @@ void            sched(void);
 void            setproc(struct proc*);
 void            sleep(void*, struct spinlock*);
 void            userinit(void);
-int             wait(void);
+int             wait(uint64);
 void            wakeup(void*);
 void            yield(void);
 int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
@@ -181,7 +183,7 @@ void            plic_complete(int);
 
 // virtio_disk.c
 void            virtio_disk_init(void);
-void            virtio_disk_rw(struct buf *);
+void            virtio_disk_rw(struct buf *, int);
 void            virtio_disk_intr();
 
 // number of elements in fixed-size array

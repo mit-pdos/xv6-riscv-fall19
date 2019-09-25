@@ -20,7 +20,6 @@ fetchaddr(uint64 addr, uint64 *ip)
 }
 
 // Fetch the nul-terminated string at addr from the current process.
-// Doesn't actually copy the string - just sets *pp to point at it.
 // Returns length of string, not including nul, or -1 for error.
 int
 fetchstr(uint64 addr, char *buf, int max)
@@ -142,9 +141,7 @@ syscall(void)
 
   num = p->tf->a7;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-    //printf("%d: syscall %d\n", p->pid, num);
     p->tf->a0 = syscalls[num]();
-    //printf("%d: syscall %d -> %d\n", p->pid, num, p->tf->a0);
   } else {
     printf("%d %s: unknown sys call %d\n",
             p->pid, p->name, num);

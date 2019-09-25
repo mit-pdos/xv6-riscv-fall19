@@ -312,10 +312,7 @@ r_ra()
   return x;
 }
 
-// tell the machine to finish any previous writes to
-// PTEs, so that a subsequent use of a virtual
-// address or load of the SATP will see those writes.
-// perhaps this also flushes the TLB.
+// flush the TLB.
 static inline void
 sfence_vma()
 {
@@ -341,7 +338,7 @@ sfence_vma()
 
 #define PTE2PA(pte) (((pte) >> 10) << 12)
 
-#define PTE_FLAGS(pte) ((pte) & (PTE_V|PTE_R|PTE_W|PTE_X|PTE_U))
+#define PTE_FLAGS(pte) ((pte) & 0x3FF)
 
 // extract the three 9-bit page table indices from a virtual address.
 #define PXMASK          0x1FF // 9 bits

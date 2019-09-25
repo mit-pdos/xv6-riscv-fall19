@@ -1,3 +1,7 @@
+//
+// send a UDP packet to port 3000 on the host (outside of qemu).
+//
+
 #include "kernel/types.h"
 #include "kernel/stat.h"
 #include "user/user.h"
@@ -14,7 +18,7 @@ main(int argc, char *argv[])
   uint16 dport;
   char ibuf[128];
   int cc = recv(&src, &sport, &dport, ibuf, sizeof(ibuf));
-  printf(1, "recv: n=%d src=%x sport=%d dport=%d\n", cc, src, sport, dport);
+  printf("recv: n=%d src=%x sport=%d dport=%d\n", cc, src, sport, dport);
 
-  exit();
+  exit(0);
 }

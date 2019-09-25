@@ -28,7 +28,7 @@ static void itrunc(struct inode*);
 struct superblock sb; 
 
 // Read the super block.
-void
+static void
 readsb(int dev, struct superblock *sb)
 {
   struct buf *bp;
@@ -36,6 +36,15 @@ readsb(int dev, struct superblock *sb)
   bp = bread(dev, 1);
   memmove(sb, bp->data, sizeof(*sb));
   brelse(bp);
+}
+
+// Init fs
+void
+fsinit(int dev) {
+  readsb(dev, &sb);
+  if(sb.magic != FSMAGIC)
+    panic("invalid file system");
+  initlog(dev, &sb);
 }
 
 // Zero a block.
@@ -84,7 +93,6 @@ bfree(int dev, uint b)
   struct buf *bp;
   int bi, m;
 
-  readsb(dev, &sb);
   bp = bread(dev, BBLOCK(b, sb));
   bi = b % BPB;
   m = 1 << (bi % 8);
@@ -170,7 +178,7 @@ struct {
 } icache;
 
 void
-iinit(int dev)
+iinit()
 {
   int i = 0;
   
@@ -178,10 +186,6 @@ iinit(int dev)
   for(i = 0; i < NINODE; i++) {
     initsleeplock(&icache.inode[i].lock, "inode");
   }
-
-  readsb(dev, &sb);
-  if(sb.magic != FSMAGIC)
-    panic("invalid file system");
 }
 
 static struct inode* iget(uint dev, uint inum);
@@ -466,8 +470,10 @@ readi(struct inode *ip, int user_dst, uint64 dst, uint off, uint n)
   for(tot=0; tot<n; tot+=m, off+=m, dst+=m){
     bp = bread(ip->dev, bmap(ip, off/BSIZE));
     m = min(n - tot, BSIZE - off%BSIZE);
-    if(either_copyout(user_dst, dst, bp->data + (off % BSIZE), m) == -1)
+    if(either_copyout(user_dst, dst, bp->data + (off % BSIZE), m) == -1) {
+      brelse(bp);
       break;
+    }
     brelse(bp);
   }
   return n;
@@ -491,16 +497,23 @@ writei(struct inode *ip, int user_src, uint64 src, uint off, uint n)
   for(tot=0; tot<n; tot+=m, off+=m, src+=m){
     bp = bread(ip->dev, bmap(ip, off/BSIZE));
     m = min(n - tot, BSIZE - off%BSIZE);
-    if(either_copyin(bp->data + (off % BSIZE), user_src, src, m) == -1)
+    if(either_copyin(bp->data + (off % BSIZE), user_src, src, m) == -1) {
+      brelse(bp);
       break;
+    }
     log_write(bp);
     brelse(bp);
   }
 
-  if(n > 0 && off > ip->size){
-    ip->size = off;
+  if(n > 0){
+    if(off > ip->size)
+      ip->size = off;
+    // write the i-node back to disk even if the size didn't change
+    // because the loop above might have called bmap() and added a new
+    // block to ip->addrs[].
     iupdate(ip);
   }
+
   return n;
 }
 
