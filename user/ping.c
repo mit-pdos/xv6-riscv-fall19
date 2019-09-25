@@ -1,5 +1,6 @@
 //
-// send a UDP packet to port 3000 on the host (outside of qemu).
+// send a UDP packet to port 3000 on the host (outside of qemu),
+// and receive a response.
 //
 
 #include "kernel/types.h"

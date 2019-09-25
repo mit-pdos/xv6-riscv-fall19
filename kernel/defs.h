@@ -22,8 +22,11 @@ void            consoleinit(void);
 void            consoleintr(int);
 void            consputc(int);
 
+// pci.c
+void            pci_init();
+
 // e1000.c
-void            e1000init();
+void            e1000init(uint32 *);
 void            e1000_intr();
 
 // exec.c

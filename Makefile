@@ -29,7 +29,10 @@ OBJS = \
   $K/kernelvec.o \
   $K/plic.o \
   $K/virtio_disk.o \
-  $K/e1000.o
+  $K/e1000.o \
+  $K/ip.o \
+  $K/sysnet.o \
+  $K/pci.o \
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
