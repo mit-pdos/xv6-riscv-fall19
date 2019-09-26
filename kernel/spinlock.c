@@ -8,14 +8,24 @@
 #include "proc.h"
 #include "defs.h"
 
-uint64 ntest_and_set;
+#define NLOCK 1000
 
+static int nlock;
+static struct spinlock *locks[NLOCK];
+
+// assumes locks are not freed
 void
 initlock(struct spinlock *lk, char *name)
 {
   lk->name = name;
   lk->locked = 0;
   lk->cpu = 0;
+  lk->nts = 0;
+  lk->n = 0;
+  if(nlock >= NLOCK)
+    panic("initlock");
+  locks[nlock] = lk;
+  nlock++;
 }
 
 // Acquire the lock.
@@ -27,12 +37,14 @@ acquire(struct spinlock *lk)
   if(holding(lk))
     panic("acquire");
 
+  __sync_fetch_and_add(&(lk->n), 1);
+    
   // On RISC-V, sync_lock_test_and_set turns into an atomic swap:
   //   a5 = 1
   //   s1 = &lk->locked
   //   amoswap.w.aq a5, a5, (s1)
   while(__sync_lock_test_and_set(&lk->locked, 1) != 0) {
-     __sync_fetch_and_add(&ntest_and_set, 1);
+     __sync_fetch_and_add(&lk->nts, 1);
   }
   
   // Tell the C compiler and the processor to not move loads or stores
@@ -110,8 +122,56 @@ pop_off(void)
     intr_on();
 }
 
+void
+print_lock(struct spinlock *lk)
+{
+  if(lk->n > 0) 
+    printf("lock: %s: #fetch-and-add %d #acquire() %d\n", lk->name, lk->nts, lk->n);
+}
+
 uint64
 sys_ntas(void)
 {
-  return ntest_and_set;
+  int zero = 0;
+  int tot = 0;
+  
+  if (argint(0, &zero) < 0) {
+    return -1;
+  }
+  if(zero == 0) {
+    for(int i = 0; i < NLOCK; i++) {
+      if(locks[i] == 0)
+        break;
+      locks[i]->nts = 0;
+    }
+    return 0;
+  }
+
+  printf("=== lock kmem/bcache stats\n");
+  for(int i = 0; i < NLOCK; i++) {
+    if(locks[i] == 0)
+      break;
+    if(strncmp(locks[i]->name, "bcache", strlen("bcache")) == 0 ||
+       strncmp(locks[i]->name, "kmem", strlen("kmem")) == 0) {
+      tot += locks[i]->nts;
+      print_lock(locks[i]);
+    }
+  }
+
+  printf("=== top 5 contended locks:\n");
+  int last = 100000000;
+  // stupid way to compute top 5 contended locks
+  for(int t= 0; t < 5; t++) {
+    int top = 0;
+    for(int i = 0; i < NLOCK; i++) {
+      if(locks[i] == 0)
+        break;
+      if(locks[i]->nts > locks[top]->nts && locks[i]->nts < last) {
+        top = i;
+      }
+    }
+    print_lock(locks[top]);
+    last = locks[top]->nts;
+  }
+  return tot;
 }
