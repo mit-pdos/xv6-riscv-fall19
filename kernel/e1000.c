@@ -1,7 +1,3 @@
-//
-// mostly copied from JOS
-//
-
 #include "types.h"
 #include "param.h"
 #include "memlayout.h"
@@ -11,6 +7,7 @@
 #include "defs.h"
 #include "e1000_dev.h"
 
+// SOL_E1000
 #define TX_RING_SIZE 16
 static struct tx_desc tx_ring[TX_RING_SIZE] __attribute__((aligned(16)));
 static char tx_data[TX_RING_SIZE][DATA_MAX];
@@ -18,25 +15,35 @@ static char tx_data[TX_RING_SIZE][DATA_MAX];
 #define RX_RING_SIZE 16
 static struct rx_desc rx_ring[RX_RING_SIZE] __attribute__((aligned(16)));
 static char rx_data[RX_RING_SIZE][2048];
+// END_E1000
 
+// remember where the e1000's registers live.
 static volatile uint32 *regs;
 
+// SOL_E1000
 struct spinlock e1000_lock;
+// END_E1000
 
 // called by pci_init().
-// xregs are the memory address at which the
+// xregs is the memory address at which the
 // e1000's registers are mapped.
 void
-e1000init(uint32 *xregs)
+e1000_init(uint32 *xregs)
 {
+// SOL_E1000
   int i;
 
   initlock(&e1000_lock, "e1000");
+// END_E1000
 
   regs = xregs;
 
-  // copied from JOS
-  
+  //
+  // Your code here.
+  // Set up transmit and receive DMA rings.
+  //
+
+// SOL_E1000
   // [E1000 14.5] Transmit initialization
   memset(tx_ring, 0, sizeof(tx_ring));
   for (i = 0; i < TX_RING_SIZE; i++) {
@@ -48,43 +55,56 @@ e1000init(uint32 *xregs)
     panic("e1000");
   regs[E1000_TDLEN] = sizeof(tx_ring);
   regs[E1000_TDH] = regs[E1000_TDT] = 0;
-  regs[E1000_TCTL] = (E1000_TCTL_EN | E1000_TCTL_PSP |
-                      (0x10 << E1000_TCTL_CT_SHIFT) |
-                      (0x40 << E1000_TCTL_COLD_SHIFT));
-  regs[E1000_TIPG] = 10 | (8<<10) | (6<<20);
   
   // [E1000 14.4] Receive initialization
   memset(rx_ring, 0, sizeof(rx_ring));
   for (i = 0; i < RX_RING_SIZE; i++) {
     rx_ring[i].addr = (uint64) rx_data[i];
   }
-  // filter by qemu's MAC address, 52:54:00:12:34:56
-  regs[E1000_RA] = 0x12005452;
-  regs[E1000_RA+1] = 0x5634 | (1<<31);
-  for (i = 0; i < 4096/32; i++)
-    regs[E1000_MTA + i] = 0;
   regs[E1000_RDBAL] = (uint64) rx_ring;
   if(sizeof(rx_ring) % 128 != 0)
     panic("e1000");
   regs[E1000_RDH] = 0;
   regs[E1000_RDT] = RX_RING_SIZE - 1;
   regs[E1000_RDLEN] = sizeof(rx_ring);
+// END_E1000
 
-  // Strip CRC because that's what the grade script expects
-  regs[E1000_RCTL] = E1000_RCTL_EN | E1000_RCTL_BAM | E1000_RCTL_SZ_2048
-    | E1000_RCTL_SECRC;
+  // filter by qemu's MAC address, 52:54:00:12:34:56
+  regs[E1000_RA] = 0x12005452;
+  regs[E1000_RA+1] = 0x5634 | (1<<31);
+  // multicast table
+  for (int i = 0; i < 4096/32; i++)
+    regs[E1000_MTA + i] = 0;
+
+  // transmitter control bits.
+  regs[E1000_TCTL] = E1000_TCTL_EN |  // enable
+    E1000_TCTL_PSP |                  // pad short packets
+    (0x10 << E1000_TCTL_CT_SHIFT) |   // collision stuff
+    (0x40 << E1000_TCTL_COLD_SHIFT);
+  regs[E1000_TIPG] = 10 | (8<<10) | (6<<20); // inter-pkt gap
+
+  // receiver control bits.
+  regs[E1000_RCTL] = E1000_RCTL_EN | // enable receiver
+    E1000_RCTL_BAM |                 // enable broadcast
+    E1000_RCTL_SZ_2048 |             // 2048-byte rx buffers
+    E1000_RCTL_SECRC;                // strip CRC
   
   // ask e1000 for receive interrupts.
   regs[E1000_RDTR] = 0; // interrupt after every received packet (no timer)
   regs[E1000_RADV] = 0; // interrupt after every packet (no timer)
-  //regs[E1000_RSRPD] = 1; // small packet size
   regs[E1000_IMS] = (1 << 7); // RXT0 -- RX timer expiry
-  //regs[E1000_IMS] = (1 << 16); // SRPD -- RX small packet
 }
 
 int
 e1000_transmit(const char *buf, unsigned int len)
 {
+  //
+  // Your code here.
+  //
+  // buf contains an ethernet frame; copy it to the
+  // tx descriptor ring so that the e100 sends it.
+  //
+// SOL_E1000
   if (!regs || len > DATA_MAX)
     return -1;
 
@@ -117,15 +137,21 @@ e1000_transmit(const char *buf, unsigned int len)
   release(&e1000_lock);
   
   printf("sent a packet\n");
+// END_E1000
   
   return 0;
 }
 
-// XXX someone set up e1000 interrupts.
-// XXX someone calls here.
 void
 e1000_intr(void)
 {
+  //
+  // Your code here.
+  //
+  // trap.c calls e1000_intr() when the e1000
+  // raises an interrupt.
+  //
+// SOL_E1000
   printf("e1000_intr\n");
 
   acquire(&e1000_lock);
@@ -140,6 +166,7 @@ e1000_intr(void)
   wakeup(&e1000_lock);
 
   release(&e1000_lock);
+// END_E1000
 }
 
 // blocks; doesn't return until a packet is available.
@@ -147,6 +174,13 @@ e1000_intr(void)
 void
 e1000_recv(char **buf, int *len)
 {
+  //
+  // Your code here.
+  //
+  // Wait for a packet to arrive from the e1000
+  // and copy it into buf.
+  //
+  // SOL_E1000
   while(1){
     int tail;
     
@@ -187,5 +221,6 @@ e1000_recv(char **buf, int *len)
 
     return;
   }
+  // END_E1000
 }
 

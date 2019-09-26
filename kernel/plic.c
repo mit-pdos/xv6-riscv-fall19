@@ -44,8 +44,6 @@ plicinithart(void)
   *(uint32*)PLIC_SPRIORITY(hart) = 0;
 }
 
-// XXX got rid of plic_pending
-
 // ask the PLIC what interrupt we should serve.
 int
 plic_claim(void)

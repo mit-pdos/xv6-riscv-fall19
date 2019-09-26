@@ -10,8 +10,6 @@
 #include "proc.h"
 #include "defs.h"
 
-int e1000_transmit(const char *buf, unsigned int len);
-
 // convert host byte order to network byte order,
 // for a 16-bit int.
 // network byte order is big-endian, but
@@ -73,6 +71,7 @@ in_cksum(const unsigned char *addr, int len)
   return answer;
 }
 
+// an IP packet header (comes after an Ethernet header).
 struct ip {
   uint8  ip_vhl;         /* version << 4 | header length >> 2 */
   uint8  ip_tos;         /* type of service */
@@ -85,6 +84,7 @@ struct ip {
   uint32 ip_src, ip_dst;
 };
 
+// a UDP packet header (comes after an IP header).
 struct udp {
   uint16 sport; // source port
   uint16 dport; // destination port
@@ -92,6 +92,7 @@ struct udp {
   uint16 sum;   // checksum
 };
 
+// an ARP packet (comes after an Ethernet header).
 struct arp {
   uint16 hrd; // format of hardware address
   uint16 pro; // format of protocol address
@@ -105,10 +106,11 @@ struct arp {
   uint32 tip;    // target IP address
 } __attribute__((packed));
 
-// inbuf is an ethernet frame containing an ARP packet.
-// parse it, and respond if it is a query for us.
+// call this when an ARP packet arrives from the E1000.
+// inbuf is the ethernet frame containing an ARP packet.
+// responds if it is a query for us.
 // the point is that qemu's slirp requires us to
-// respond to an ARP query for IP address 127.0.0.1.
+// respond to an ARP query for IP address 10.0.2.15.
 // returns 1 if it was an ARP packet, 0 otherwise.
 int 
 handle_arp(char *inbuf, int inlen)
@@ -127,11 +129,14 @@ handle_arp(char *inbuf, int inlen)
   struct arp arp;
   memmove(&arp, inbuf + 14, sizeof(struct arp));
 
+  // 10.0.2.15 is qemu's idea of the guest's IP address.
+  uint32 our_ip = (10 << 24) | (0 << 16) | (2 << 8) | (15 << 0);
+
   int op = ntohs(arp.op);
   if(op == 1){ // request
     uint32 sip = ntohl(arp.sip); // sender's IP address (qemu's slirp)
     uint32 tip = ntohl(arp.tip); // target IP address (us)
-    if(arp.pln == 4 && tip == 0x7f000001){
+    if(arp.pln == 4 && tip == our_ip){
       // qemu's slirp is asking for our ethernet address,
       // which is 52:54:00:12:34:56
       char myeth[6] = { 0x52, 0x54, 0x00, 0x12, 0x34, 0x56 };
@@ -153,7 +158,7 @@ handle_arp(char *inbuf, int inlen)
   return 1;
 }
 
-// parse an incoming eth/IP/UDP packet.
+// parse an eth/IP/UDP packet.
 // inbuf[] should start with a 14-byte ethernet header.
 // returns -1 if there was an error, or it isn't a UDP packet.
 // if OK, fills in src, sport, dport,
@@ -180,14 +185,14 @@ parse_udp(char *inbuf, int inlen, char *out, int outmax,
   if(ip.ip_p != 17) // IPPROTO_UDP
     return -1;
 
-  // XXX IP checksum
+  // should check IP checksum ...
 
-  // XXX IP header length
+  // should check IP header length ...
 
   struct udp udp;
   memmove(&udp, inbuf+14+sizeof(ip), sizeof(udp));
 
-  // XXX UDP checksum
+  // should check UDP checksum ...
 
   int iplen = ntohs(ip.ip_len);
   int ulen = ntohs(udp.ulen);
@@ -232,7 +237,7 @@ format_udp(char *buf, int buflen,
 
   uint16 len = sizeof(struct ip) + sizeof(struct udp) + paylen;
 
-  // fake IP header for UDP checksum.
+  // pseudo IP header for UDP checksum.
   struct ip ip;
   memset(&ip, 0, sizeof(ip));
   ip.ip_vhl = 0;

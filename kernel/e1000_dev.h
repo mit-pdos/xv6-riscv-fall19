@@ -1,5 +1,5 @@
 //
-// E1000 hardware definitions: register and DMA ring format.
+// E1000 hardware definitions: registers and DMA ring format.
 // from the Intel 82540EP/EM &c manual.
 //
 

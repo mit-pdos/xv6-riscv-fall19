@@ -33,7 +33,6 @@
 #define CLINT_MTIME (CLINT + 0xBFF8) // cycles since boot.
 
 // qemu puts programmable interrupt controller here.
-// XXX get rid of unused defines.
 #define PLIC 0x0c000000L
 #define PLIC_PRIORITY (PLIC + 0x0)
 #define PLIC_PENDING (PLIC + 0x1000)

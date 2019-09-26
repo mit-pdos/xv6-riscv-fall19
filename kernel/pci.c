@@ -1,7 +1,8 @@
 //
-// simple PCI-Express initialization, probably only
+// simple PCI-Express initialization, only
 // works for qemu and its e1000 card.
 //
+
 #include "types.h"
 #include "param.h"
 #include "memlayout.h"
@@ -10,18 +11,18 @@
 #include "proc.h"
 #include "defs.h"
 
-void e1000init(uint32 *);
-
 void
 pci_init()
 {
   // we'll place the e1000 registers at this address.
+  // vm.c maps this range.
   uint64 e1000_regs = 0x40000000L;
 
   // qemu -machine virt puts PCIe config space here.
+  // vm.c maps this range.
   uint32  *ecam = (uint32 *) 0x30000000L;
   
-  // look at each device on bus 0.
+  // look at each possible PCI device on bus 0.
   for(int dev = 0; dev < 32; dev++){
     int bus = 0;
     int func = 0;
@@ -30,7 +31,7 @@ pci_init()
     volatile uint32 *base = ecam + off;
     uint32 id = base[0];
     
-    // 0x100e8086 is e1000
+    // 100e:8086 is an e1000
     if(id == 0x100e8086){
       // command and status register.
       // bit 0 : I/O access enable
@@ -43,7 +44,7 @@ pci_init()
         uint32 old = base[4+i];
 
         // writing all 1's to the BAR causes it to be
-        // replaced with its size (!).
+        // replaced with its size.
         base[4+i] = 0xffffffff;
         __sync_synchronize();
 
@@ -53,8 +54,8 @@ pci_init()
       // tell the e1000 to reveal its registers at
       // physical address 0x40000000.
       base[4+0] = e1000_regs;
+
+      e1000_init((uint32*)e1000_regs);
     }
   }
-
-  e1000init((uint32*)e1000_regs);
 }

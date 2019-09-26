@@ -26,8 +26,10 @@ void            consputc(int);
 void            pci_init();
 
 // e1000.c
-void            e1000init(uint32 *);
+void            e1000_init(uint32 *);
 void            e1000_intr();
+int             e1000_transmit(const char *, uint32);
+void            e1000_recv(char **, int *);
 
 // exec.c
 int             exec(char*, char**);
@@ -59,6 +61,14 @@ struct inode*   nameiparent(char*, char*);
 int             readi(struct inode*, int, uint64, uint, uint);
 void            stati(struct inode*, struct stat*);
 int             writei(struct inode*, int, uint64, uint, uint);
+
+// ip.c
+int             handle_arp(char *inbuf, int inlen);
+int             parse_udp(char *inbuf, int inlen, char *out, int outmax,
+                          uint32 *src, uint16 *sport, uint16 *dport);
+int             format_udp(char *buf, int buflen,
+                           uint32 dst, uint16 dport, uint32 src, uint16 sport,
+                           const char *payload, int paylen);
 
 // ramdisk.c
 void            ramdiskinit(void);
