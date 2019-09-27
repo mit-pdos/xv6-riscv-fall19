@@ -27,6 +27,7 @@
 #define VIRTIO_MMIO_INTERRUPT_STATUS	0x060 // read-only
 #define VIRTIO_MMIO_INTERRUPT_ACK	0x064 // write-only
 #define VIRTIO_MMIO_STATUS		0x070 // read/write
+#define VIRTIO_MMIO_CONFIG              0x100 // configuration space
 
 // status register bits, from qemu virtio_config.h
 #define VIRTIO_CONFIG_S_ACKNOWLEDGE	1
@@ -43,20 +44,23 @@
 #define VIRTIO_RING_F_INDIRECT_DESC 28
 #define VIRTIO_RING_F_EVENT_IDX     29
 
-// this many virtio descriptors.
-// must be a power of two.
-#define NUM 8
-
-struct VRingDesc {
+struct virtq_desc {
   uint64 addr;
   uint32 len;
   uint16 flags;
   uint16 next;
 };
-#define VRING_DESC_F_NEXT  1 // chained with another descriptor
-#define VRING_DESC_F_WRITE 2 // device writes (vs read)
+#define VIRTQ_DESC_F_NEXT  1 // chained with another descriptor
+#define VIRTQ_DESC_F_WRITE 2 // device writes (vs read)
 
-struct VRingUsedElem {
+struct virtq_avail {
+  uint16 flags;
+  uint16 idx;
+  uint16 ring[];
+};
+#define VIRTQ_AVAIL_F_NO_INTERRUPT 1 // suppress interrupts
+
+struct virtq_used_elem {
   uint32 id;   // index of start of completed descriptor chain
   uint32 len;
 };
@@ -65,8 +69,8 @@ struct VRingUsedElem {
 #define VIRTIO_BLK_T_IN  0 // read the disk
 #define VIRTIO_BLK_T_OUT 1 // write the disk
 
-struct UsedArea {
+struct virtq_used {
   uint16 flags;
-  uint16 id;
-  struct VRingUsedElem elems[NUM];
+  uint16 idx;
+  struct virtq_used_elem ring[];
 };
