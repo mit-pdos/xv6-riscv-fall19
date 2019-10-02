@@ -12,7 +12,7 @@ def test_nsh_top():
             contents = f.read()
             if 'malloc' in contents or 'sbrk' in contents:
                 raise AssertionError('Use of malloc() / sbrk() is forbidden')
-    except IOError, OSError:
+    except IOError:
         raise AssertionError('Cannot read user/nsh.c')
     r.run_qemu(shell_script([
         'testsh nsh'
