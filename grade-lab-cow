@@ -25,11 +25,21 @@ def test_three():
 def test_file():
     r.match('^file: ok$')
 
-@test(20, "usertests")
+@test(19, "usertests")
 def test_usertests():
     r.run_qemu(shell_script([
         'usertests'
     ]), timeout=150)
     r.match('^ALL TESTS PASSED$')
+
+@test(1, "time")
+def test_time():
+    try:
+        with open('time.txt') as f:
+            d = f.read().strip()
+            if not re.match(r'^\d+$', d):
+                raise AssertionError('time.txt does not contain a single integer (number of hours spent on the lab)')
+    except OSError:
+        raise AssertionError('Cannot read time.txt')
 
 run_tests()
