@@ -1,1 +1,1 @@
-LAB=alloc
+LAB=cow
