@@ -39,7 +39,7 @@ def test_time():
             d = f.read().strip()
             if not re.match(r'^\d+$', d):
                 raise AssertionError('time.txt does not contain a single integer (number of hours spent on the lab)')
-    except OSError:
+    except IOError, OSError:
         raise AssertionError('Cannot read time.txt')
 
 run_tests()
