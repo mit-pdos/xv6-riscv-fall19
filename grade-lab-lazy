@@ -34,11 +34,45 @@ def test_filetest():
 def test_memtest():
     r.match("test lazy alloc: OK$")
 
-@test(50, "usertests")
+@test(0, "usertests")
 def test_usertests():
     r.run_qemu(shell_script([
         'usertests'
     ]), timeout=150)
+
+@test(4, "usertests: pgbug", parent=test_usertests)
+def test_pgbug():
+    r.match("^test pgbug: OK$")
+
+@test(4, "usertests: sbrkbugs", parent=test_usertests)
+def test_sbrkbugs():
+    if not re.search(r'\ntest sbrkbugs: [\s\S]*OK\ntest badarg', r.qemu.output):
+        raise AssertionError('Failed sbrkbugs')
+
+@test(4, "usertests: argptest", parent=test_usertests)
+def test_argptest():
+    r.match("^test argptest: OK$")
+
+@test(4, "usertests: sbrkmuch", parent=test_usertests)
+def test_sbrkmuch():
+    r.match("^test sbrkmuch: OK$")
+
+@test(4, "usertests: sbrkfail", parent=test_usertests)
+def test_sbrkfail():
+    if not re.search(r'\ntest sbrkfail: [\s\S]*OK\ntest sbrkarg', r.qemu.output):
+        raise AssertionError('Failed sbrkfail')
+
+@test(5, "usertests: sbrkarg", parent=test_usertests)
+def test_sbrkarg():
+    r.match("^test sbrkarg: OK$")
+
+@test(5, "usertests: stacktest", parent=test_usertests)
+def test_stacktest():
+    if not re.search(r'\ntest stacktest: [\s\S]*OK\ntest opentest', r.qemu.output):
+        raise AssertionError('Failed stacktest')
+
+@test(20, "usertests: all tests", parent=test_usertests)
+def test_usertests_all():
     r.match('^ALL TESTS PASSED$')
 
 run_tests()
