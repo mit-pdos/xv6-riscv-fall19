@@ -10,17 +10,14 @@
 #define STACK_SIZE  8192
 #define MAX_THREAD  4
 
-typedef struct thread thread_t, *thread_p;
-typedef struct mutex mutex_t, *mutex_p;
-
 struct thread {
   uint64     sp;                /* saved stack pointer */
   char stack[STACK_SIZE];       /* the thread's stack */
   int        state;             /* FREE, RUNNING, RUNNABLE */
 };
-static thread_t all_thread[MAX_THREAD];
-thread_p  current_thread;
-thread_p  next_thread;
+static struct thread all_thread[MAX_THREAD];
+struct thread *current_thread;
+struct thread *next_thread;
 extern void uthread_switch(uint64, uint64);
               
 void 
@@ -38,7 +35,7 @@ thread_init(void)
 static void 
 thread_schedule(void)
 {
-  thread_p t;
+  struct thread *t;
 
   /* Find another runnable thread. */
   next_thread = 0;
@@ -61,7 +58,7 @@ thread_schedule(void)
 
   if (current_thread != next_thread) {         /* switch threads?  */
     next_thread->state = RUNNING;
-     uthread_switch((uint64) &current_thread, (uint64) &next_thread);
+    uthread_switch((uint64) &current_thread, (uint64) &next_thread);
   } else
     next_thread = 0;
 }
@@ -69,7 +66,7 @@ thread_schedule(void)
 void 
 thread_create(void (*func)())
 {
-  thread_p t;
+  struct thread *t;
 
   for (t = all_thread; t < all_thread + MAX_THREAD; t++) {
     if (t->state == FREE) break;
