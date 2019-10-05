@@ -7,3 +7,5 @@
 	.globl uthread_switch
 uthread_switch:
 	/* YOUR CODE HERE */
+
+	ret    /* return to ra */
