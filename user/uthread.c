@@ -16,13 +16,13 @@ struct thread {
 };
 static struct thread all_thread[MAX_THREAD];
 struct thread *current_thread;
-extern void uthread_switch(uint64, uint64);
+extern void thread_switch(uint64, uint64);
               
 void 
 thread_init(void)
 {
   // main() is thread 0, which will make the first invocation to
-  // thread_schedule().  it needs a stack so that the first uthread_switch() can
+  // thread_schedule().  it needs a stack so that the first thread_switch() can
   // save thread 0's state.  thread_schedule() won't run the main thread ever
   // again, because its state is set to RUNNING, and thread_schedule() selects
   // a RUNNABLE thread.
@@ -59,8 +59,8 @@ thread_schedule(void)
     t = current_thread;
     current_thread = next_thread;
     /* YOUR CODE HERE
-     * Invoke uthread_switch to switch from t to next_thread:
-     * uthread_switch(??, ??);
+     * Invoke thread_switch to switch from t to next_thread:
+     * thread_switch(??, ??);
      */
   } else
     next_thread = 0;
