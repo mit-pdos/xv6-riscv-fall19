@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+
+import re
+from gradelib import *
+
+r = Runner(save("xv6.out"))
+
+@test(5, "answers-syscall.txt")
+def test_answers():
+    # just a simple sanity check, will be graded manually
+    try:
+        with open('answers-syscall.txt') as f:
+            d = f.read().strip()
+            if not len(d) > 10:
+                raise AssertionError('answers-syscall.txt does not seem to contain enough text')
+    except IOError:
+        raise AssertionError('Cannot read answers-syscall.txt')
+
+@test(25, "uthread")
+def test_uthread():
+    r.run_qemu(shell_script([
+        'uthread'
+    ]))
+    tids = re.findall('^my thread 0x[0-9A-F]{16}$', r.qemu.output, re.M)
+    if not len(tids) > 2:
+        raise AssertionError('Output does not contain "my thread 0x..."')
+    t1, t2 = tids[:2]
+    expected = ['my thread running', t1, 'my thread running', t2]
+    expected.extend([t1, t2] * 99)
+    expected.extend(['my thread: exit'] * 2)
+    expected.append('thread_schedule: no runnable threads')
+    if not re.findall('\n'.join(expected), r.qemu.output, re.M):
+        raise AssertionError('Output does not match expected output')
+
+@test(0, "running alarmtest")
+def test_alarmtest():
+    r.run_qemu(shell_script([
+        'alarmtest'
+    ]))
+
+@test(20, "alarmtest: test0", parent=test_alarmtest)
+def test_alarmtest_test0():
+    r.match('^test0 passed$')
+
+@test(30, "alarmtest: test1", parent=test_alarmtest)
+def test_alarmtest_test1():
+    r.match('^test1 passed$')
+
+@test(19, "usertests")
+def test_usertests():
+    r.run_qemu(shell_script([
+        'usertests'
+    ]), timeout=150)
+    r.match('^ALL TESTS PASSED$')
+
+@test(1, "time")
+def test_time():
+    try:
+        with open('time.txt') as f:
+            d = f.read().strip()
+            if not re.match(r'^\d+$', d):
+                raise AssertionError('time.txt does not contain a single integer (number of hours spent on the lab)')
+    except IOError:
+        raise AssertionError('Cannot read time.txt')
+
+run_tests()
