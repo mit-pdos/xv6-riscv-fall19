@@ -40,36 +40,37 @@ def test_usertests():
         'usertests'
     ]), timeout=150)
 
+def usertest_check(testcase, nextcase, output):
+    if not re.search(r'\ntest {}: [\s\S]*OK\ntest {}'.format(testcase, nextcase), output):
+        raise AssertionError('Failed ' + testcase)
+
 @test(4, "usertests: pgbug", parent=test_usertests)
 def test_pgbug():
-    r.match("^test pgbug: OK$")
+    usertest_check("pgbug", "sbrkbugs", r.qemu.output)
 
 @test(4, "usertests: sbrkbugs", parent=test_usertests)
 def test_sbrkbugs():
-    if not re.search(r'\ntest sbrkbugs: [\s\S]*OK\ntest badarg', r.qemu.output):
-        raise AssertionError('Failed sbrkbugs')
+    usertest_check("sbrkbugs", "badarg", r.qemu.output)
 
 @test(4, "usertests: argptest", parent=test_usertests)
 def test_argptest():
-    r.match("^test argptest: OK$")
+    usertest_check("argptest", "createdelete", r.qemu.output)
 
 @test(4, "usertests: sbrkmuch", parent=test_usertests)
 def test_sbrkmuch():
-    r.match("^test sbrkmuch: OK$")
+    usertest_check("sbrkmuch", "kernmem", r.qemu.output)
 
 @test(4, "usertests: sbrkfail", parent=test_usertests)
 def test_sbrkfail():
-    if not re.search(r'\ntest sbrkfail: [\s\S]*OK\ntest sbrkarg', r.qemu.output):
-        raise AssertionError('Failed sbrkfail')
+    usertest_check("sbrkfail", "sbrkarg", r.qemu.output)
 
 @test(5, "usertests: sbrkarg", parent=test_usertests)
 def test_sbrkarg():
-    r.match("^test sbrkarg: OK$")
+    usertest_check("sbrkarg", "validatetest", r.qemu.output)
 
 @test(5, "usertests: stacktest", parent=test_usertests)
 def test_stacktest():
-    if not re.search(r'\ntest stacktest: [\s\S]*OK\ntest opentest', r.qemu.output):
-        raise AssertionError('Failed stacktest')
+    usertest_check("stacktest", "opentest", r.qemu.output)
 
 @test(20, "usertests: all tests", parent=test_usertests)
 def test_usertests_all():
