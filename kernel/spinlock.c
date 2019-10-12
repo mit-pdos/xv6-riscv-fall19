@@ -129,7 +129,7 @@ void
 print_lock(struct spinlock *lk)
 {
   if(lk->n > 0) 
-    printf("lock: %s: #fetch-and-add %d #acquire() %d\n", lk->name, lk->nts, lk->n);
+    printf("lock: %s: #test-and-set %d #acquire() %d\n", lk->name, lk->nts, lk->n);
 }
 
 uint64
