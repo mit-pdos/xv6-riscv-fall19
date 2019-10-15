@@ -129,7 +129,7 @@ void test1()
   printf("start test1\n");
   file[0] = 'B';
   file[2] = '\0';
-  for(int i = 0; i < 2; i++){
+  for(int i = 0; i < NCHILD; i++){
     file[1] = '0' + i;
     unlink(file);
     if (i == 0) {
