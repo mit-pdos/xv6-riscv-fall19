@@ -1,6 +1,6 @@
 Vagrant.configure(2) do |config|
 
-  config.vm.box = 'ubuntu/disco64'
+  config.vm.box = 'generic/arch'
 
   # synced folder
   config.vm.synced_folder '.', '/xv6'
@@ -10,15 +10,13 @@ Vagrant.configure(2) do |config|
 
   # install packages
   config.vm.provision 'shell', inline: <<-EOS
-    apt-get -y update
-    apt-get install -y \
-      python \
-      git \
-      build-essential \
-      gdb-multiarch \
-      qemu-system-misc \
-      gcc-riscv64-linux-gnu \
-      binutils-riscv64-linux-gnu
+    pacman -Syq --noconfirm --needed \
+      riscv64-linux-gnu-binutils \
+      riscv64-linux-gnu-gcc \
+      riscv64-linux-gnu-gdb \
+      qemu-headless-arch-extra \
+      base-devel \
+      git
   EOS
 
 end
