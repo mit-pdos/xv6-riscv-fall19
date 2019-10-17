@@ -144,6 +144,8 @@ UPROGS=\
 	$U/_mounttest\
 	$U/_crashtest\
 	$U/_alloctest\
+	$U/_bigfile\
+	$U/_symlinktest\
 
 fs.img: mkfs/mkfs README user/xargstest.sh $(UPROGS)
 	mkfs/mkfs fs.img README user/xargstest.sh $(UPROGS)
@@ -168,7 +170,7 @@ ifndef CPUS
 CPUS := 3
 endif
 
-QEMUEXTRA = -drive file=fs1.img,if=none,format=raw,id=x1 -device virtio-blk-device,drive=x1,bus=virtio-mmio-bus.1
+QEMUEXTRA = 
 QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 128M -smp $(CPUS) -nographic
 QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 
