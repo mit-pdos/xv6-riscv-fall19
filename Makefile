@@ -141,8 +141,6 @@ UPROGS=\
 	$U/_testsh\
 	$U/_kalloctest\
 	$U/_bcachetest\
-	$U/_mounttest\
-	$U/_crashtest\
 	$U/_alloctest\
 	$U/_bigfile\
 	$U/_symlinktest\
