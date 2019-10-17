@@ -234,39 +234,4 @@ log_write(struct buf *b)
   release(&log[dev].lock);
 }
 
-// crash before commit or after commit
-void
-crash_op(int dev, int docommit)
-{
-  int do_commit = 0;
-    
-  acquire(&log[dev].lock);
-
-  if (dev < 0 || dev >= NDISK)
-    panic("end_op: invalid disk");
-  if(log[dev].outstanding == 0)
-    panic("end_op: already closed");
-  log[dev].outstanding -= 1;
-  if(log[dev].committing)
-    panic("log[dev].committing");
-  if(log[dev].outstanding == 0){
-    do_commit = 1;
-    log[dev].committing = 1;
-  }
-  
-  release(&log[dev].lock);
-
-  if(docommit & do_commit){
-    printf("crash_op: commit\n");
-    // call commit w/o holding locks, since not allowed
-    // to sleep with locks.
-
-    if (log[dev].lh.n > 0) {
-      write_log(dev);     // Write modified blocks from cache to log
-      write_head(dev);    // Write header to disk -- the real commit
-    }
-  }
-  panic("crashed file system; please restart xv6 and run crashtest\n");
-}
-
 

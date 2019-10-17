@@ -483,21 +483,3 @@ sys_pipe(void)
   return 0;
 }
 
-// system call to test crashes
-uint64
-sys_crash(void)
-{
-  char path[MAXPATH];
-  struct inode *ip;
-  int crash;
-  
-  if(argstr(0, path, MAXPATH) < 0 || argint(1, &crash) < 0)
-    return -1;
-  ip = create(path, T_FILE, 0, 0);
-  if(ip == 0){
-    return -1;
-  }
-  iunlockput(ip);
-  crash_op(ip->dev, crash);
-  return 0;
-}
