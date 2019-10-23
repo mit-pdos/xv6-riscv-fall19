@@ -1,1 +1,1 @@
-LAB=syscall
+LAB=lock
