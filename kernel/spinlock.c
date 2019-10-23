@@ -146,6 +146,7 @@ sys_ntas(void)
       if(locks[i] == 0)
         break;
       locks[i]->nts = 0;
+      locks[i]->n = 0;
     }
     return 0;
   }
