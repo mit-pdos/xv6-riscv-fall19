@@ -449,8 +449,13 @@ scheduler(void)
   
   c->proc = 0;
   for(;;){
-    // Avoid deadlock by ensuring that devices can interrupt.
+    // Avoid deadlock by giving devices a chance to interrupt.
     intr_on();
+
+    // Run the for loop with interrupts off to avoid
+    // a race between an interrupt and WFI, which would
+    // cause a lost wakeup.
+    intr_off();
 
     int found = 0;
     for(p = proc; p < &proc[NPROC]; p++) {
@@ -469,10 +474,14 @@ scheduler(void)
 
         found = 1;
       }
+
+      // ensure that release() doesn't enable interrupts.
+      // again to avoid a race between interrupt and WFI.
+      c->intena = 0;
+
       release(&p->lock);
     }
     if(found == 0){
-      intr_on();
       asm volatile("wfi");
     }
   }
