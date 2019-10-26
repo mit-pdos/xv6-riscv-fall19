@@ -8,7 +8,7 @@ int
 main()
 {
   char buf[BSIZE];
-  int fd, i, sectors;
+  int fd, i, blocks;
 
   fd = open("big.file", O_CREATE | O_WRONLY);
   if(fd < 0){
@@ -16,18 +16,18 @@ main()
     exit(-1);
   }
 
-  sectors = 0;
+  blocks = 0;
   while(1){
-    *(int*)buf = sectors;
+    *(int*)buf = blocks;
     int cc = write(fd, buf, sizeof(buf));
     if(cc <= 0)
       break;
-    sectors++;
-    if (sectors % 100 == 0)
+    blocks++;
+    if (blocks % 100 == 0)
       printf(".");
   }
 
-  printf("\nwrote %d sectors\n", sectors);
+  printf("\nwrote %d blocks\n", blocks);
 
   close(fd);
   fd = open("big.file", O_RDONLY);
@@ -35,14 +35,14 @@ main()
     printf("bigfile: cannot re-open big.file for reading\n");
     exit(-1);
   }
-  for(i = 0; i < sectors; i++){
+  for(i = 0; i < blocks; i++){
     int cc = read(fd, buf, sizeof(buf));
     if(cc <= 0){
-      printf("bigfile: read error at sector %d\n", i);
+      printf("bigfile: read error at block %d\n", i);
       exit(-1);
     }
     if(*(int*)buf != i){
-      printf("bigfile: read the wrong data (%d) for sector %d\n",
+      printf("bigfile: read the wrong data (%d) for block %d\n",
              *(int*)buf, i);
       exit(-1);
     }
