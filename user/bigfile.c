@@ -28,7 +28,11 @@ main()
   }
 
   printf("\nwrote %d blocks\n", blocks);
-
+  if(blocks != 65803) {
+    printf("bigfile: file is too small\n");
+    exit(-1);
+  }
+  
   close(fd);
   fd = open("big.file", O_RDONLY);
   if(fd < 0){
@@ -48,7 +52,7 @@ main()
     }
   }
 
-  printf("done; ok\n"); 
+  printf("bigfile done; ok\n"); 
 
   exit(0);
 }
