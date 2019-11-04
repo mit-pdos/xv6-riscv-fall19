@@ -41,12 +41,12 @@ _v1(char *p)
     if (i < PGSIZE + (PGSIZE/2)) {
       if (p[i] != 'A') {
         printf("mismatch at %d, wanted 'A', got 0x%x\n", i, p[i]);
-        err("mismatch");
+        err("v1 mismatch (1)");
       }
     } else {
       if (p[i] != 0) {
         printf("mismatch at %d, wanted zero, got 0x%x\n", i, p[i]);
-        err("mismatch");
+        err("v1 mismatch (2)");
       }
     }
   }
@@ -82,80 +82,117 @@ mmap_test(void)
   int fd;
   int i;
   const char * const f = "mmap.dur";
-  printf("mmap_test\n");
+  printf("mmap_test starting\n");
   testname = "mmap_test";
 
-  makefile(f);
 
+  //
+  // create a file with known content, map it into memory, check that
+  // the mapped memory has the same bytes as originally written to the
+  // file.
+  //
+  makefile(f);
   if ((fd = open(f, O_RDONLY)) == -1)
     err("open");
+  //
+  // this call to mmap() asks the kernel to map the content
+  // of open file fd into the address space. the first
+  // 0 argument indicates that the kernel should choose the
+  // virtual address. the second argument indicates how many
+  // bytes to map. the third argument indicates that the
+  // mapped memory should be read-only. the fourth argument
+  // indicates that, if the process modifies the mapped memory,
+  // that the modifications should not be written back to
+  // the file nor shared with other processes mapping the
+  // same file (of course in this case updates are prohibited
+  // due to PROT_READ). the fifth argument is the file descriptor
+  // of the file to be mapped. the last argument is the starting
+  // offset in the file.
+  //
   char *p = mmap(0, PGSIZE*2, PROT_READ, MAP_PRIVATE, fd, 0);
   if (p == MAP_FAILED)
-    err("mmap");
+    err("mmap (1)");
   _v1(p);
   if (munmap(p, PGSIZE*2) == -1)
-    err("munmap");
+    err("munmap (1)");
 
   // should be able to map file opened read-only with private writable
   // mapping
   p = mmap(0, PGSIZE*2, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
   if (p == MAP_FAILED)
-    err("mmap");
+    err("mmap (2)");
   if (close(fd) == -1)
     err("close");
   _v1(p);
   for (i = 0; i < PGSIZE*2; i++)
     p[i] = 'Z';
   if (munmap(p, PGSIZE*2) == -1)
-    err("munmap");
+    err("munmap (2)");
 
+  // check that mmap doesn't allow read/write mapping of a
+  // file opened read-only.
   if ((fd = open(f, O_RDONLY)) == -1)
     err("open");
   p = mmap(0, PGSIZE*3, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if (p != MAP_FAILED)
-    err("mmap succeeded");
+    err("mmap call should have failed");
   if (close(fd) == -1)
     err("close");
 
+  // check that mmap does allow read/write mapping of a
+  // file opened read/write.
   if ((fd = open(f, O_RDWR)) == -1)
     err("open");
   p = mmap(0, PGSIZE*3, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if (p == MAP_FAILED)
-    err("mmap");
+    err("mmap (3)");
   if (close(fd) == -1)
     err("close");
 
+  // check that the mapping still works after close(fd).
   _v1(p);
+
+  // write the mapped memory.
   for (i = 0; i < PGSIZE*2; i++)
     p[i] = 'Z';
-  if (munmap(p, PGSIZE*2) == -1)
-    err("munmap");
 
+  // unmap just the first two of three pages of mapped memory.
+  if (munmap(p, PGSIZE*2) == -1)
+    err("munmap (3)");
+
+  // check that the writes to the mapped memory were
+  // written to the file.
   if ((fd = open(f, O_RDWR)) == -1)
     err("open");
-  char b;
-  for (i = 0; i < PGSIZE + (PGSIZE/2); i++)
-    if (read(fd, &b, 1) != 1 || b != 'Z')
-      err("read");
+  for (i = 0; i < PGSIZE + (PGSIZE/2); i++){
+    char b;
+    if (read(fd, &b, 1) != 1)
+      err("read (1)");
+    if (b != 'Z')
+      err("file does not contain modifications");
+  }
   if (close(fd) == -1)
     err("close");
 
+  // unmap the rest of the mapped memory.
   if (munmap(p+PGSIZE*2, PGSIZE) == -1)
-    err("munmap");
+    err("munmap (4)");
 
-  printf("mmap_test ok\n");
+  printf("mmap_test OK\n");
 }
 
+//
+// mmap a file, then fork.
+// check that the child sees the mapped file.
+//
 void
 fork_test(void)
 {
   int fd;
-  int fds[2];
   int pid;
-  char buf[1];
   const char * const f = "mmap.dur";
   
-  printf("fork_test\n");
+  printf("fork_test starting\n");
   testname = "fork_test";
   
   makefile(f);
@@ -164,22 +201,23 @@ fork_test(void)
   unlink(f);
   char *p = mmap(0, PGSIZE*2, PROT_READ, MAP_SHARED, fd, 0);
   if (p == MAP_FAILED)
-    err("mmap");
+    err("mmap (4)");
 
-  pipe(fds);
   if((pid = fork()) < 0)
     err("fork");
   if (pid == 0) {
-    close(fds[0]);
     _v1(p);
-    if (write(fds[1], "x", 1) != 1)
-      err("write");
+    exit(0); // tell the parent that the mapping looks OK.
+  }
+
+  int status = -1;
+  wait(&status);
+
+  if(status != 0){
+    printf("fork_test failed\n");
     exit(1);
   }
-  close(fds[1]);
-  if(read(fds[0], buf, sizeof(buf)) != 1)
-    err("read");
-  wait(0);
-  printf("fork_test ok\n");
+
+  printf("fork_test OK\n");
 }
 
