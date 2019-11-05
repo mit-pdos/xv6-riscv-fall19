@@ -178,6 +178,41 @@ mmap_test(void)
   if (munmap(p+PGSIZE*2, PGSIZE) == -1)
     err("munmap (4)");
 
+  //
+  // mmap two files at the same time.
+  //
+  int fd1;
+  if((fd1 = open("mmap1", O_RDWR|O_CREATE)) < 0)
+    err("open mmap1");
+  if(write(fd1, "12345", 5) != 5)
+    err("write mmap1");
+  char *p1 = mmap(0, PGSIZE, PROT_READ, MAP_PRIVATE, fd1, 0);
+  if(p1 == MAP_FAILED)
+    err("mmap mmap1");
+  close(fd1);
+  unlink("mmap1");
+
+  int fd2;
+  if((fd2 = open("mmap2", O_RDWR|O_CREATE)) < 0)
+    err("open mmap2");
+  if(write(fd1, "67890", 5) != 5)
+    err("write mmap2");
+  char *p2 = mmap(0, PGSIZE, PROT_READ, MAP_PRIVATE, fd2, 0);
+  if(p2 == MAP_FAILED)
+    err("mmap mmap2");
+  close(fd2);
+  unlink("mmap2");
+
+  if(memcmp(p1, "12345", 5) != 0)
+    err("mmap1 mismatch");
+  if(memcmp(p2, "67890", 5) != 0)
+    err("mmap2 mismatch");
+
+  munmap(p1, PGSIZE);
+  if(memcmp(p2, "67890", 5) != 0)
+    err("mmap2 mismatch (2)");
+  munmap(p2, PGSIZE);
+
   printf("mmap_test OK\n");
 }
 
