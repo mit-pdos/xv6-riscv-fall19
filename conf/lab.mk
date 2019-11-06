@@ -1,1 +1,1 @@
-LAB=lock
+LAB=mmap
