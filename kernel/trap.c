@@ -267,7 +267,6 @@ scause_desc(uint64 stval)
     }
   } else {
     if (code < NELEM(nointr_desc)) {
-      printf("nelem = %d\n", NELEM(nointr_desc));
       return nointr_desc[code];
     } else if (code <= 23) {
       return "<reserved for future standard use>";
