@@ -416,7 +416,7 @@ class Runner():
             # Wait for QEMU to start or make to fail.  This will set
             # self.gdb if QEMU starts.
             self.qemu.on_output = [self.__monitor_start]
-            self.__react([self.qemu], timeout=30)
+            self.__react([self.qemu], timeout=90)
             self.qemu.on_output = []
             if self.gdb is None:
                 print("Failed to connect to QEMU; output:")
