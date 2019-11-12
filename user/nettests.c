@@ -7,7 +7,7 @@
 // and receive a response.
 //
 static void
-ping(uint16 sport, uint16 dport)
+ping(uint16 sport, uint16 dport, int attempts)
 {
   int fd;
   char obuf[13] = "hello world!";
@@ -25,9 +25,11 @@ ping(uint16 sport, uint16 dport)
     exit(1);
   }
 
-  if(write(fd, obuf, sizeof(obuf)) < 0){
-    fprintf(2, "ping: send() failed\n");
-    exit(1);
+  for(int i = 0; i < attempts; i++) {
+    if(write(fd, obuf, sizeof(obuf)) < 0){
+      fprintf(2, "ping: send() failed\n");
+      exit(1);
+    }
   }
 
   char ibuf[128];
@@ -48,26 +50,24 @@ int
 main(int argc, char *argv[])
 {
   int i, ret;
-  uint16 dport;
+  uint16 dport = NET_TESTS_PORT;
 
-  if (argc < 2){
-    fprintf(2, "missing port number\n");
-    fprintf(2, "provide the port number printed by 'make server' as an arg\n");
-    exit(1);
-  }
+  printf("nettests running on port %d\n", dport);
 
-  dport = atoi(argv[1]);
+  printf("testing one ping: ");
+  ping(2000, dport, 2);
+  printf("OK\n");
 
   printf("testing single-process pings: ");
   for (i = 0; i < 100; i++)
-    ping(2000, dport);
+    ping(2000, dport, 1);
   printf("OK\n");
 
   printf("testing multi-process pings: ");
   for (i = 0; i < 10; i++){
     int pid = fork();
     if (pid == 0){
-      ping(2000 + i + 1, dport);
+      ping(2000 + i + 1, dport, 1);
       exit(0);
     }
   }

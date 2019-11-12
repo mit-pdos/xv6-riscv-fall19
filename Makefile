@@ -64,6 +64,7 @@ CFLAGS += -mcmodel=medany
 CFLAGS += -ffreestanding -fno-common -nostdlib -mno-relax
 CFLAGS += -I.
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
+CFLAGS += -DNET_TESTS_PORT=$(SERVERPORT)
 
 # Disable PIE when possible (for Ubuntu 16.10 toolchain)
 ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]no-pie'),)
@@ -161,7 +162,7 @@ endif
 QEMUEXTRA = -drive file=fs1.img,if=none,format=raw,id=x1 -device virtio-blk-device,drive=x1,bus=virtio-mmio-bus.1
 QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 3G -smp $(CPUS) -nographic
 QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
-QEMUOPTS += -netdev user,id=net0
+QEMUOPTS += -netdev user,id=net0 -object filter-dump,id=net0,netdev=net0,file=packets.pcap
 QEMUOPTS += -device e1000,netdev=net0,bus=pcie.0
 
 qemu: $K/kernel fs.img
@@ -175,10 +176,10 @@ qemu-gdb: $K/kernel .gdbinit fs.img
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 
 # try to generate a unique port for the echo server
-SERVERPORT = $(shell expr `id -u` % 5000 + 25000)
+SERVERPORT = $(shell expr `id -u` % 5000 + 25099)
 
 server:
-	python server.py $(SERVERPORT)
+	python2 server.py $(SERVERPORT)
 
 # CUT HERE
 # prepare dist for students
