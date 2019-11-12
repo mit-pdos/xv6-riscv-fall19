@@ -8,6 +8,8 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+struct mbuf;
+struct sock;
 
 // bio.c
 void            binit(void);
@@ -27,9 +29,8 @@ void            pci_init();
 
 // e1000.c
 void            e1000_init(uint32 *);
-void            e1000_intr();
-int             e1000_transmit(const char *, uint32);
-void            e1000_recv(char **, int *);
+void            e1000_intr(void);
+int             e1000_transmit(struct mbuf*);
 
 // exec.c
 int             exec(char*, char**);
@@ -62,13 +63,14 @@ int             readi(struct inode*, int, uint64, uint, uint);
 void            stati(struct inode*, struct stat*);
 int             writei(struct inode*, int, uint64, uint, uint);
 
-// ip.c
-int             handle_arp(char *inbuf, int inlen);
-int             parse_udp(char *inbuf, int inlen, char *out, int outmax,
-                          uint32 *src, uint16 *sport, uint16 *dport);
-int             format_udp(char *buf, int buflen,
-                           uint32 dst, uint16 dport, uint32 src, uint16 sport,
-                           const char *payload, int paylen);
+// net.c
+void            net_rx(struct mbuf*);
+void            net_tx_udp(struct mbuf*, uint32, uint16, uint16);
+
+// sysnet.c
+void            sockinit(void);
+int             sockalloc(struct file **, uint32, uint16, uint16);
+void            sockrecvudp(struct mbuf*, uint32, uint16, uint16);
 
 // ramdisk.c
 void            ramdiskinit(void);

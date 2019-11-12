@@ -30,7 +30,7 @@ OBJS = \
   $K/plic.o \
   $K/virtio_disk.o \
   $K/e1000.o \
-  $K/ip.o \
+  $K/net.o \
   $K/sysnet.o \
   $K/pci.o \
 
@@ -133,7 +133,7 @@ UPROGS=\
 	$U/_usertests\
 	$U/_wc\
 	$U/_zombie\
-	$U/_ping\
+	$U/_nettests\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
@@ -173,6 +173,12 @@ qemu: $K/kernel fs.img
 qemu-gdb: $K/kernel .gdbinit fs.img
 	@echo "*** Now run 'gdb' in another window." 1>&2
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
+
+# try to generate a unique port for the echo server
+SERVERPORT = $(shell expr `id -u` % 5000 + 25000)
+
+server:
+	python server.py $(SERVERPORT)
 
 # CUT HERE
 # prepare dist for students

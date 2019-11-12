@@ -4,6 +4,7 @@
 //
 
 /* Registers */
+#define E1000_CTL      (0x00000/4)  /* Device Control Register - RW */
 #define E1000_ICR      (0x000C0/4)  /* Interrupt Cause Read - R */
 #define E1000_IMS      (0x000D0/4)  /* Interrupt Mask Set - RW */
 #define E1000_RCTL     (0x00100/4)  /* RX Control - RW */
@@ -22,6 +23,12 @@
 #define E1000_TDT      (0x03818/4)  /* TX Descripotr Tail - RW */
 #define E1000_MTA      (0x05200/4)  /* Multicast Table Array - RW Array */
 #define E1000_RA       (0x05400/4)  /* Receive Address - RW Array */
+
+/* Device Control */
+#define E1000_CTL_SLU     0x00000040    /* set link up */
+#define E1000_CTL_FRCSPD  0x00000800    /* force speed */
+#define E1000_CTL_FRCDPLX 0x00001000    /* force duplex */
+#define E1000_CTL_RST     0x00400000    /* full reset */
 
 /* Transmit Control */
 #define E1000_TCTL_RST    0x00000001    /* software reset */

@@ -36,5 +36,4 @@ entry("getpid");
 entry("sbrk");
 entry("sleep");
 entry("uptime");
-entry("send");
-entry("recv");
+entry("connect");
