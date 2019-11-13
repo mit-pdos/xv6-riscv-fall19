@@ -181,6 +181,17 @@ SERVERPORT = $(shell expr `id -u` % 5000 + 25099)
 server:
 	python2 server.py $(SERVERPORT)
 
+-include conf/lab.mk
+
+print-gdbport:
+	@echo $(GDBPORT)
+
+grade:
+	@echo $(MAKE) clean
+	@$(MAKE) clean || \
+	  (echo "'make clean' failed.  HINT: Do you have another running instance of xv6?" && exit 1)
+	./grade-lab-$(LAB) $(GRADEFLAGS)
+
 # CUT HERE
 # prepare dist for students
 # after running make dist, probably want to
