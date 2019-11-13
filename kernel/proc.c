@@ -3,6 +3,9 @@
 #include "memlayout.h"
 #include "riscv.h"
 #include "spinlock.h"
+#include "sleeplock.h"
+#include "fs.h"
+#include "file.h"
 #include "proc.h"
 #include "defs.h"
 
@@ -331,9 +334,9 @@ exit(int status)
     }
   }
 
-  begin_op();
+  begin_op(ROOTDEV);
   iput(p->cwd);
-  end_op();
+  end_op(ROOTDEV);
   p->cwd = 0;
 
   // we might re-parent a child to init. we can't be precise about
@@ -446,9 +449,15 @@ scheduler(void)
   
   c->proc = 0;
   for(;;){
-    // Avoid deadlock by ensuring that devices can interrupt.
+    // Avoid deadlock by giving devices a chance to interrupt.
     intr_on();
 
+    // Run the for loop with interrupts off to avoid
+    // a race between an interrupt and WFI, which would
+    // cause a lost wakeup.
+    intr_off();
+
+    int found = 0;
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if(p->state == RUNNABLE) {
@@ -462,8 +471,18 @@ scheduler(void)
         // Process is done running for now.
         // It should have changed its p->state before coming back.
         c->proc = 0;
+
+        found = 1;
       }
+
+      // ensure that release() doesn't enable interrupts.
+      // again to avoid a race between interrupt and WFI.
+      c->intena = 0;
+
       release(&p->lock);
+    }
+    if(found == 0){
+      asm volatile("wfi");
     }
   }
 }
@@ -521,7 +540,7 @@ forkret(void)
     // regular process (e.g., because it calls sleep), and thus cannot
     // be run from main().
     first = 0;
-    fsinit(ROOTDEV);
+    fsinit(minor(ROOTDEV));
   }
 
   usertrapret();

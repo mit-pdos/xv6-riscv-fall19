@@ -85,8 +85,9 @@ void            kinit();
 // log.c
 void            initlog(int, struct superblock*);
 void            log_write(struct buf*);
-void            begin_op();
-void            end_op();
+void            begin_op(int);
+void            end_op(int);
+void            crash_op(int,int);
 
 // pipe.c
 int             pipealloc(struct file**, struct file**);
@@ -133,6 +134,7 @@ void            initlock(struct spinlock*, char*);
 void            release(struct spinlock*);
 void            push_off(void);
 void            pop_off(void);
+uint64          sys_ntas(void);
 
 // sleeplock.c
 void            acquiresleep(struct sleeplock*);
@@ -192,14 +194,34 @@ int             copyinstr(pagetable_t, char *, uint64, uint64);
 // plic.c
 void            plicinit(void);
 void            plicinithart(void);
-uint64          plic_pending(void);
 int             plic_claim(void);
 void            plic_complete(int);
 
 // virtio_disk.c
-void            virtio_disk_init(void);
-void            virtio_disk_rw(struct buf *, int);
-void            virtio_disk_intr();
+void            virtio_disk_init(int);
+void            virtio_disk_rw(int, struct buf *, int);
+void            virtio_disk_intr(int);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
+// Extra files for allocator lab
+
+
+// buddy.c
+void           bd_init(void*,void*);
+void           bd_free(void*);
+void           *bd_malloc(uint64);
+
+struct list {
+  struct list *next;
+  struct list *prev;
+};
+
+// list.c
+void lst_init(struct list*);
+void lst_remove(struct list*);
+void lst_push(struct list*, void *);
+void *lst_pop(struct list*);
+void lst_print(struct list*);
+int lst_empty(struct list*);

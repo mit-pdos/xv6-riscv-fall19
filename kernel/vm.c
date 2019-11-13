@@ -15,6 +15,8 @@ extern char etext[];  // kernel.ld sets this to end of kernel code.
 
 extern char trampoline[]; // trampoline.S
 
+void print(pagetable_t);
+
 /*
  * create a direct-map page table for the kernel and
  * turn on paging. called early, in supervisor mode.
@@ -29,8 +31,11 @@ kvminit()
   // uart registers
   kvmmap(UART0, UART0, PGSIZE, PTE_R | PTE_W);
 
-  // virtio mmio disk interface
-  kvmmap(VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
+  // virtio mmio disk interface 0
+  kvmmap(VIRTION(0), VIRTION(0), PGSIZE, PTE_R | PTE_W);
+
+  // virtio mmio disk interface 1
+  kvmmap(VIRTION(1), VIRTION(1), PGSIZE, PTE_R | PTE_W);
 
   // PCI-E ECAM (configuration space), for pci.c
   kvmmap(0x30000000L, 0x30000000L, 0x10000000, PTE_R | PTE_W);
