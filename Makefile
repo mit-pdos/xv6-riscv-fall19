@@ -173,10 +173,12 @@ ifndef CPUS
 CPUS := 1
 endif
 
+FWDPORT = $(shell expr `id -u` % 5000 + 25999)
+
 QEMUEXTRA = 
 QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 128M -smp $(CPUS) -nographic
 QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
-QEMUOPTS += -netdev user,id=net0 -object filter-dump,id=net0,netdev=net0,file=packets.pcap
+QEMUOPTS += -netdev user,id=net0,hostfwd=udp::$(FWDPORT)-:2000 -object filter-dump,id=net0,netdev=net0,file=packets.pcap
 QEMUOPTS += -device e1000,netdev=net0,bus=pcie.0
 
 qemu: $K/kernel fs.img
@@ -194,6 +196,9 @@ SERVERPORT = $(shell expr `id -u` % 5000 + 25099)
 
 server:
 	python2 server.py $(SERVERPORT)
+
+ping:
+	python2 ping.py $(FWDPORT)
 
 ##
 ##  FOR submitting lab solutions
