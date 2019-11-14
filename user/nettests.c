@@ -165,6 +165,10 @@ dns_rep(uint8 *ibuf, int cc)
       printf("DNS arecord for %s is ", qname ? qname : "" );
       uint8 *ip = (ibuf+len);
       printf("%d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
+      if(ip[0] != 128 || ip[1] != 52 || ip[2] != 129 || ip[3] != 126) {
+        printf("wrong ip address");
+        exit(1);
+      }
       len += 4;
     }
   }
