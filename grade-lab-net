@@ -19,13 +19,17 @@ def test_nettest():
 def test_nettest_():
     r.match('^testing one ping: OK$')
 
-@test(30, "nettest: single process", parent=test_nettest)
+@test(20, "nettest: single process", parent=test_nettest)
 def test_nettest_():
     r.match('^testing single-process pings: OK$')
 
-@test(29, "nettest: multi-process", parent=test_nettest)
+@test(20, "nettest: multi-process", parent=test_nettest)
 def test_nettest_fork_test():
     r.match('^testing multi-process pings: OK$')
+
+@test(19, "nettest: DNS", parent=test_nettest)
+def test_nettest_dns_test():
+    r.match('^DNS OK$')
 
 @test(1, "time")
 def test_time():
