@@ -88,7 +88,7 @@ dns_req(uint8 *obuf)
   int len = 0;
   
   struct dns *hdr = (struct dns *) obuf;
-  hdr->id = htons(1337);
+  hdr->id = htons(6828);
   hdr->rd = 1;
   hdr->qdcount = htons(1);
   
@@ -96,7 +96,7 @@ dns_req(uint8 *obuf)
   
   // qname part of question
   char *qname = (char *) (obuf + sizeof(struct dns));
-  char *s = "mit.edu.";
+  char *s = "pdos.csail.mit.edu.";
   encode_qname(qname, s);
   len += strlen(qname) + 1;
 
@@ -122,6 +122,9 @@ dns_rep(uint8 *ibuf, int cc)
     exit(1);
     printf("Not a DNS response for %d\n", ntohs(hdr->id));
   }
+
+  if(hdr->id != htons(6828))
+    printf("DNS wrong id: %d\n", ntohs(hdr->id));
   
   if(hdr->rcode != 0) {
     printf("DNS rcode error: %x\n", hdr->rcode);
