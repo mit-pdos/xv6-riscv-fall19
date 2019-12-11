@@ -17,6 +17,32 @@ extern char trampoline[]; // trampoline.S
 
 void print(pagetable_t);
 
+void vmprint(pagetable_t pagetable) {
+  // 三重循环打印页表
+  printf("page table %p\n", pagetable);
+  for(int i = 0; i < 512; i++) {
+    pte_t pte_1 = pagetable[i];
+    if((pte_1 & PTE_V) && (pte_1 & (PTE_R|PTE_W|PTE_X)) == 0) {
+      uint64 child_1 = PTE2PA(pte_1);
+      printf(" ..%d: pte %p pa %p\n",i, pte_1, PTE2PA(pte_1));
+      for(int j = 0; j < 512; j++) {
+        pte_t pte_2 = ((pagetable_t)child_1)[j];
+        if((pte_2 & PTE_V) && (pte_2 & (PTE_R|PTE_W|PTE_X)) == 0) {
+          uint64 child_2 = PTE2PA(pte_2);
+          printf(" .. ..%d: pte %p pa %p\n",j, pte_2, PTE2PA(pte_2));
+          for(int k = 0; k < 512; k++) {
+            pte_t pte_3 = ((pagetable_t)child_2)[k];
+            if(pte_3 & PTE_V) {
+              printf(" .. .. ..%d: pte %p pa %p\n",k, pte_3, PTE2PA(pte_3));
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
 /*
  * create a direct-map page table for the kernel and
  * turn on paging. called early, in supervisor mode.
