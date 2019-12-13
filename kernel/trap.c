@@ -72,18 +72,9 @@ usertrap(void)
       // Kill a process if it page-faults on a virtual memory address higher than any allocated with sbrk()
       goto fail;
     } 
-    // 判断是否访问了栈
-    // printf("p->kstack = %p\n",p->kstack);
-    // printf("current_addr = %p\n", r_stval());
-    // printf("current_sp = %p\n",r_sp()); // 这时候的栈被切换了怎么办？
-    // if( PGROUNDDOWN(r_stval()) < r_sp() ) {
-    //   goto fail;
-    // }
-    // if(walkaddr(myproc()->pagetable, r_sepc()) != 0) {
-    //   goto fail;
-    // }
     uint64 addr = PGROUNDDOWN(r_stval());
     if( addr < p->tf->sp ) {
+      // Kill a process if it tries to reach the address below sp
       goto fail;
     }
     
@@ -95,7 +86,7 @@ usertrap(void)
         goto fail;
       }
     } else {
-      // Handle out-of-memory correctly
+      // Handle out of memory
       goto fail;
     }
   } else {
