@@ -2183,7 +2183,8 @@ main(int argc, char *argv[])
   close(open("usertests.ran", O_CREATE));
 
   int fail = 0;
-  for (struct test *t = tests; t->s != 0; t++) {
+  // 暂时修改，只测试后面2个
+  for (struct test *t = tests+24; t->s != 0; t++) {
     if((n == 0) || strcmp(t->s, n) == 0) {
       if(!run(t->f, t->s))
         fail = 1;

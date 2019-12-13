@@ -41,7 +41,6 @@ sys_wait(void)
 uint64
 sys_sbrk(void)
 {
-  // ???uint64??int?
   uint64 addr;
   int n;
   
