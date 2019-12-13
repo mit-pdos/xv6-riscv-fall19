@@ -1947,8 +1947,11 @@ stacktest(char *s)
   pid = fork();
   if(pid == 0) {
     char *sp = (char *) r_sp();
+    printf("\nBefore: SP = %p \n",sp);
     sp -= PGSIZE;
-    // the *sp should cause a trap.
+    // the *sp should cause a trap. 试图访问sp，应该报错
+    // 进程切换的时候，sp不一样
+    printf("After: SP = %p \n", sp);
     printf("%s: stacktest: read below stack %p\n", *sp);
     exit(1);
   } else if(pid < 0){
@@ -2184,7 +2187,7 @@ main(int argc, char *argv[])
 
   int fail = 0;
   // 暂时修改，只测试后面2个
-  for (struct test *t = tests+24; t->s != 0; t++) {
+  for (struct test *t = tests; t->s != 0; t++) {
     if((n == 0) || strcmp(t->s, n) == 0) {
       if(!run(t->f, t->s))
         fail = 1;

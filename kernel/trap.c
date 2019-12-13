@@ -71,7 +71,15 @@ usertrap(void)
     if(r_stval() > p->sz) {
       // Kill a process if it page-faults on a virtual memory address higher than any allocated with sbrk()
       goto fail;
-    }
+    } 
+    // 判断是否访问了栈
+    // printf("p->kstack = %p\n",p->kstack);
+    // printf("current_addr = %p\n", r_stval());
+    // printf("current_sp = %p\n",r_sp()); // 这时候的栈被切换了怎么办？
+    // if( PGROUNDDOWN(r_stval()) < r_sp() ) {
+    //   goto fail;
+    // }
+    
     uint64 addr = PGROUNDDOWN(r_stval());
     char *mem = kalloc();
     if(mem != 0) {
