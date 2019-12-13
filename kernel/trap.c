@@ -79,8 +79,14 @@ usertrap(void)
     // if( PGROUNDDOWN(r_stval()) < r_sp() ) {
     //   goto fail;
     // }
-    
+    // if(walkaddr(myproc()->pagetable, r_sepc()) != 0) {
+    //   goto fail;
+    // }
     uint64 addr = PGROUNDDOWN(r_stval());
+    if(walkaddr(p->pagetable, addr) != 0) {
+      goto fail;
+    }
+    
     char *mem = kalloc();
     if(mem != 0) {
       memset(mem,0,PGSIZE);

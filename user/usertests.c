@@ -1947,11 +1947,11 @@ stacktest(char *s)
   pid = fork();
   if(pid == 0) {
     char *sp = (char *) r_sp();
-    printf("\nBefore: SP = %p \n",sp);
+    // printf("\nBefore: SP = %p \n",sp);
     sp -= PGSIZE;
     // the *sp should cause a trap. 试图访问sp，应该报错
     // 进程切换的时候，sp不一样
-    printf("After: SP = %p \n", sp);
+    // printf("After: SP = %p \n", sp);
     printf("%s: stacktest: read below stack %p\n", *sp);
     exit(1);
   } else if(pid < 0){
