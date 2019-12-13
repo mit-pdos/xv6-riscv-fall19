@@ -83,7 +83,7 @@ usertrap(void)
     //   goto fail;
     // }
     uint64 addr = PGROUNDDOWN(r_stval());
-    if(walkaddr(p->pagetable, addr) != 0) {
+    if( addr < p->tf->sp ) {
       goto fail;
     }
     

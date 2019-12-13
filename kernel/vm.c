@@ -190,11 +190,7 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
     if((pte = walk(pagetable, a, 1)) == 0)
       return -1;
     if(*pte & PTE_V)
-      // panic("remap");
-      {
-        uvmunmap(pagetable, a, PGSIZE, 0);
-      }
-      // goto out;
+      panic("remap");
     *pte = PA2PTE(pa) | perm | PTE_V;
     // out:
     if(a == last)
