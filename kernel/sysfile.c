@@ -87,7 +87,22 @@ sys_write(void)
 
   if(argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argaddr(1, &p) < 0)
     return -1;
-
+  // Handle out-of-boundry access
+  if( p > myproc()->sz ) 
+    return -1;
+  // Allocate the memory if not allocated
+  uint64 addr = PGROUNDDOWN(p);
+  if(walkaddr(myproc()->pagetable,addr) == 0) {
+    char *mem = kalloc();
+    if(mem == 0) {
+      return -1;
+    }
+    memset(mem,0,PGSIZE); // may have bug here
+    if(mappages(myproc()->pagetable, addr, PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U)!=0) {
+      kfree(mem);
+      return -1;
+    }
+  }
   return filewrite(f, p, n);
 }
 
@@ -462,6 +477,22 @@ sys_pipe(void)
 
   if(argaddr(0, &fdarray) < 0)
     return -1;
+  // Handle out-of-boundary memory access
+  if(fdarray > p->sz ) 
+    return -1;
+  // Lazy allocation
+  uint64 addr = PGROUNDDOWN(fdarray);
+  if(walkaddr(myproc()->pagetable,addr) == 0) {
+    char *mem = kalloc();
+    if(mem == 0) {
+      return -1;
+    }
+    memset(mem,0,PGSIZE); // may have bug here
+    if(mappages(myproc()->pagetable, addr, PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U)!=0) {
+      kfree(mem);
+      return -1;
+    }
+  }
   if(pipealloc(&rf, &wf) < 0)
     return -1;
   fd0 = -1;
