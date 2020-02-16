@@ -19,3 +19,4 @@ myapi.key
 *-handin.tar.gz
 xv6.out*
 settings.json
+*.pyc
