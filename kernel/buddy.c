@@ -92,7 +92,7 @@ bd_print() {
   }
 }
 
-// What is the first k such that 2^k >= n?
+// What is the first k such that LEAF_SIZE*2^k >= n?
 int
 firstk(uint64 n) {
   int k = 0;
@@ -262,7 +262,10 @@ bd_initfree(void *bd_left, void *bd_right) {
     int left = blk_index_next(k, bd_left);
     int right = blk_index(k, bd_right);
     free += bd_initfree_pair(k, left);
-    if(right <= left)
+
+    int right_is_buddy = left + 1 == right && left % 2 == 0;
+    int right_is_out_of_memory = addr(k, right) >= bd_base + BLK_SIZE(MAXSIZE);
+    if(right <= left || right_is_buddy || right_is_out_of_memory)
       continue;
     free += bd_initfree_pair(k, right);
   }
@@ -280,7 +283,7 @@ bd_mark_data_structures(char *p) {
 
 // Mark the range [end, HEAPSIZE) as allocated
 int
-bd_mark_unavailable(void *end, void *left) {
+bd_mark_unavailable(void *end) {
   int unavailable = BLK_SIZE(MAXSIZE)-(end-bd_base);
   if(unavailable > 0)
     unavailable = ROUNDUP(unavailable, LEAF_SIZE);
@@ -339,7 +342,7 @@ bd_init(void *base, void *end) {
   
   // mark the unavailable memory range [end, HEAP_SIZE) as allocated,
   // so that buddy will not hand out that memory.
-  int unavailable = bd_mark_unavailable(end, p);
+  int unavailable = bd_mark_unavailable(end);
   void *bd_end = bd_base+BLK_SIZE(MAXSIZE)-unavailable;
   
   // initialize free lists for each size k
