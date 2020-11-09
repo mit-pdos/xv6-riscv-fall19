@@ -156,7 +156,7 @@ bd_malloc(uint64 nbytes)
 // Find the size of the block that p points to.
 int
 size(char *p) {
-  for (int k = 0; k < nsizes; k++) {
+  for (int k = 0; k < MAXSIZE; k++) {
     if(bit_isset(bd_sizes[k+1].split, blk_index(k+1, p))) {
       return k;
     }
