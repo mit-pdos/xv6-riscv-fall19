@@ -5,6 +5,10 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
+#include "spinlock.h"
+#include "sleeplock.h"
+#include "proc.h"
+#include "file.h"
 
 /*
  * the kernel's page table.
@@ -450,4 +454,51 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   } else {
     return -1;
   }
+}
+
+uint64 sys_mmap(void)
+{
+  uint64 addr;
+  int length;
+  int prot;
+  int flags;
+  int fd;
+  int offset;
+  struct file *f;
+  struct proc *p = myproc();
+  uint sz = p->sz;
+  sz = PGROUNDUP(sz);
+  p->sz = sz;
+
+  if(argaddr(0, &addr) < 0 || 
+    argint(0, &length) < 0 || 
+    argint(0, &prot) < 0 ||
+    argint(0, &flags) < 0 ||
+    argint(0, &fd) < 0 ||
+    argint(0, &offset) < 0)
+    return -1;
+
+  f = p->ofile[fd];
+  if(f->writable == 0 || f->readable == 0)
+    return -1;
+  
+  f->ref++;
+  for(int i=0; i<NMAP; i++){
+    if(p->vma_list[i].f == 0){
+      p->vma_list[i].va = addr == 0 ? sz : addr;
+      p->vma_list[i].f = f;
+      p->vma_list[i].length = length;
+      p->vma_list[i].prot = prot;
+      p->vma_list[i].offset = offset;
+      p->sz += length;
+      return p->vma_list[i].va;
+    }
+  }
+  f->ref--;
+  return -1;
+}
+
+uint64 sys_munmap(void)
+{
+    return -1;
 }

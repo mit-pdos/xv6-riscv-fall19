@@ -70,7 +70,11 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
-  } else {
+  } else if(r_scause() == 13){
+    for(int i=0; i<NMAP; i++){
+      if(p->vma_list[i].f != 0 && p->vma_list[i].va)
+    }
+  } else{
     printf("usertrap(): unexpected scause %p (%s) pid=%d\n", r_scause(), scause_desc(r_scause()), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     p->killed = 1;

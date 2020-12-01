@@ -14,3 +14,7 @@
 #define NDISK        2
 
 #define NMAP         5      //maximum number of mapped files per process
+#define PROT_READ    0x010
+#define PROT_WRITE   0x001
+#define MAP_PRIVATE  0
+#define MAP_SHARED   1
