@@ -248,7 +248,6 @@ fork_test(void)
   if((pid = fork()) < 0)
     err("fork");
   if (pid == 0) {
-    printf("test\n");
     _v1(p1);
     munmap(p1, PGSIZE); // just the first page
     exit(0); // tell the parent that the mapping looks OK.

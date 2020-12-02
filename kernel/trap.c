@@ -73,9 +73,10 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
-  } else if(r_scause() == 13){
+  } else if(r_scause() == 13 || r_scause() == 15){
     uint64 fault_addr = r_stval();
     uint64 vpage_addr = PGROUNDDOWN(fault_addr);
+    printf("            look, sepc=%p stval=%p\n", r_sepc(), r_stval());
     for(struct vma *vma = p->vma_list; vma < p->vma_list + NMAP; vma++){
       if(vma->valid != 0 && vma->va <= fault_addr && vma->va + vma->length > fault_addr){
         char *mem = kalloc();
@@ -96,9 +97,11 @@ usertrap(void)
         struct file *f = vma->f;
         f->off = vpage_addr - vma->va;
         fileread(f, vpage_addr, PGSIZE);
-        break;
+        goto TRAP_END;
       }
     }
+    printf("usertrap(): page fault\n");
+    p->killed = 1;
   } else{
     printf("usertrap(): unexpected scause %p (%s) pid=%d\n", r_scause(), scause_desc(r_scause()), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
@@ -108,6 +111,7 @@ usertrap(void)
   if(p->killed)
     exit(-1);
 
+TRAP_END:
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2)
     yield();

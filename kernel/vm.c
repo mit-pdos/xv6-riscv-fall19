@@ -334,33 +334,16 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   char *mem;
 
   for(i = 0; i < sz; i += PGSIZE){
-    if((pte = walk(old, i, 0)) == 0)
-      panic("uvmcopy: pte should exist");
+    if((pte = walk(old, i, 0)) == 0){
+      // panic("uvmcopy: pte should exist");
+      printf("pte not exist\n");
+      continue;
+    }
+
     if((*pte & PTE_V) == 0){
       // panic("uvmcopy: page not present");
-      printf("continue\n");
+      printf("page not present\n");
       continue;
-      // struct proc *p = myproc();
-      // for(struct vma *vma = p->vma_list; vma < p->vma_list + NMAP; vma++){
-      //   if(vma->valid != 0 && vma->va <= i && vma->va + vma->length > i){
-      //     mem = kalloc();
-      //     if(mem == 0){
-      //       panic("uvmcopy: alloc memory failed");
-      //     }
-      //     memset(mem, 0, PGSIZE);
-
-      //     if(mappages(old, i, PGSIZE, (uint64)mem, PTE_U|PTE_W|PTE_R) != 0){
-      //       kfree(mem);
-      //       panic("uvmcopy: cannot map\n");
-      //     }
-      //     struct file *f = vma->f;
-      //     f->off = i - vma->va;
-      //     fileread(f, i, PGSIZE);
-      //     break;
-      //   }
-      // }
-      // if((*pte & PTE_V) == 0)
-      //   continue;
     }
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
@@ -555,7 +538,6 @@ uint64 sys_munmap(void)
           filewrite(f, addr, length);
         }
         uvmunmap(p->pagetable, addr, length, 1);
-        // printf("unmap: %p, %d\n", addr, length);
         if(PGROUNDUP(vma->unmap_length) == vma->length){
           fileclose(vma->f);
           vma->valid = 0;
