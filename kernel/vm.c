@@ -79,7 +79,7 @@ kvminithart()
 //   21..39 -- 9 bits of level-1 index.
 //   12..20 -- 9 bits of level-0 index.
 //    0..12 -- 12 bits of byte offset within the page.
-static pte_t *
+pte_t *
 walk(pagetable_t pagetable, uint64 va, int alloc)
 {
   if(va >= MAXVA)
@@ -194,6 +194,11 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 size, int do_free)
     if((pte = walk(pagetable, a, 0)) == 0)
       panic("uvmunmap: walk");
     if((*pte & PTE_V) == 0){
+      if(a == last)
+        break;
+      a += PGSIZE;
+      pa += PGSIZE;
+      continue;
       printf("va=%p pte=%p\n", a, *pte);
       panic("uvmunmap: not mapped");
     }
@@ -331,8 +336,32 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0)
       panic("uvmcopy: pte should exist");
-    if((*pte & PTE_V) == 0)
-      panic("uvmcopy: page not present");
+    if((*pte & PTE_V) == 0){
+      // panic("uvmcopy: page not present");
+      printf("continue\n");
+      continue;
+      // struct proc *p = myproc();
+      // for(struct vma *vma = p->vma_list; vma < p->vma_list + NMAP; vma++){
+      //   if(vma->valid != 0 && vma->va <= i && vma->va + vma->length > i){
+      //     mem = kalloc();
+      //     if(mem == 0){
+      //       panic("uvmcopy: alloc memory failed");
+      //     }
+      //     memset(mem, 0, PGSIZE);
+
+      //     if(mappages(old, i, PGSIZE, (uint64)mem, PTE_U|PTE_W|PTE_R) != 0){
+      //       kfree(mem);
+      //       panic("uvmcopy: cannot map\n");
+      //     }
+      //     struct file *f = vma->f;
+      //     f->off = i - vma->va;
+      //     fileread(f, i, PGSIZE);
+      //     break;
+      //   }
+      // }
+      // if((*pte & PTE_V) == 0)
+      //   continue;
+    }
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
     if((mem = kalloc()) == 0)
@@ -466,39 +495,74 @@ uint64 sys_mmap(void)
   int offset;
   struct file *f;
   struct proc *p = myproc();
-  uint sz = p->sz;
-  sz = PGROUNDUP(sz);
-  p->sz = sz;
+  struct vma *vma;
+  uint sz = PGROUNDUP(p->sz);
+
 
   if(argaddr(0, &addr) < 0 || 
-    argint(0, &length) < 0 || 
-    argint(0, &prot) < 0 ||
-    argint(0, &flags) < 0 ||
-    argint(0, &fd) < 0 ||
-    argint(0, &offset) < 0)
+    argint(1, &length) < 0 || 
+    argint(2, &prot) < 0 ||
+    argint(3, &flags) < 0 ||
+    argint(4, &fd) < 0 ||
+    argint(5, &offset) < 0)
     return -1;
 
   f = p->ofile[fd];
-  if(f->writable == 0 || f->readable == 0)
+
+  if((prot & PROT_READ) && f->readable == 0)
     return -1;
   
-  f->ref++;
-  for(int i=0; i<NMAP; i++){
-    if(p->vma_list[i].f == 0){
-      p->vma_list[i].va = addr == 0 ? sz : addr;
-      p->vma_list[i].f = f;
-      p->vma_list[i].length = length;
-      p->vma_list[i].prot = prot;
-      p->vma_list[i].offset = offset;
-      p->sz += length;
-      return p->vma_list[i].va;
+  if((prot & PROT_WRITE) && f->writable == 0 && flags)
+    return -1;
+  
+  
+  filedup(f);
+  for(vma=p->vma_list; vma < p->vma_list + NMAP; vma++){
+    if(vma->valid == 0){
+      vma->valid = 1;
+      vma->va = addr == 0 ? sz : addr;
+      vma->length = PGROUNDUP(length);
+      vma->unmap_length = 0;
+      vma->f = f;
+      vma->prot = prot;
+      vma->offset = offset;
+      vma->flag = flags;
+      p->sz = sz + length;
+      return vma->va;
     }
   }
-  f->ref--;
+  fileclose(f);
   return -1;
 }
 
 uint64 sys_munmap(void)
 {
+    uint64 addr;
+    int length;
+    struct proc *p = myproc();
+    struct vma *vma;
+    
+
+    if(argaddr(0, &addr) < 0 || argint(1, &length) < 0)
+      return -1;
+    
+    for(vma=p->vma_list; vma < p->vma_list + NMAP; vma++){
+      if(vma->valid && vma->va <= addr && vma->va + vma->length >= addr){
+        vma->unmap_length += length;
+        if(vma->flag){
+          struct file *f = vma->f;
+          f->off = addr - vma->va;
+          filewrite(f, addr, length);
+        }
+        uvmunmap(p->pagetable, addr, length, 1);
+        // printf("unmap: %p, %d\n", addr, length);
+        if(PGROUNDUP(vma->unmap_length) == vma->length){
+          fileclose(vma->f);
+          vma->valid = 0;
+        }
+        return 0;
+      }
+    }
+    
     return -1;
 }

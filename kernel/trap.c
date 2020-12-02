@@ -4,6 +4,9 @@
 #include "riscv.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sleeplock.h"
+#include "fs.h"
+#include "file.h"
 #include "defs.h"
 
 struct spinlock tickslock;
@@ -71,8 +74,30 @@ usertrap(void)
   } else if((which_dev = devintr()) != 0){
     // ok
   } else if(r_scause() == 13){
-    for(int i=0; i<NMAP; i++){
-      if(p->vma_list[i].f != 0 && p->vma_list[i].va)
+    uint64 fault_addr = r_stval();
+    uint64 vpage_addr = PGROUNDDOWN(fault_addr);
+    for(struct vma *vma = p->vma_list; vma < p->vma_list + NMAP; vma++){
+      if(vma->valid != 0 && vma->va <= fault_addr && vma->va + vma->length > fault_addr){
+        char *mem = kalloc();
+        if(mem == 0){
+          p->killed = 1;
+          printf("usertrap(): alloc memory failed\n");
+          exit(-1);
+        }
+        memset(mem, 0, PGSIZE);
+
+        if(mappages(p->pagetable, vpage_addr, PGSIZE, (uint64)mem, PTE_U|PTE_W|PTE_R) != 0){
+          kfree(mem);
+          p->killed = 1;
+          printf("usertrap(): cannot mapping\n");
+          exit(-1);
+        }
+
+        struct file *f = vma->f;
+        f->off = vpage_addr - vma->va;
+        fileread(f, vpage_addr, PGSIZE);
+        break;
+      }
     }
   } else{
     printf("usertrap(): unexpected scause %p (%s) pid=%d\n", r_scause(), scause_desc(r_scause()), p->pid);
