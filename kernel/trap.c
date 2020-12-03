@@ -4,6 +4,9 @@
 #include "riscv.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sleeplock.h"
+#include "fs.h"
+#include "file.h"
 #include "defs.h"
 
 struct spinlock tickslock;
@@ -70,7 +73,41 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
-  } else {
+  } else if(r_scause() == 13 || r_scause() == 15){
+    uint64 fault_addr = r_stval();
+    uint64 vpage_addr = PGROUNDDOWN(fault_addr);
+    char *mem;
+    int prot;
+    for(struct vma *vma = p->vma_list; vma < p->vma_list + NMAP; vma++){
+      if(vma->valid != 0 && vma->va <= fault_addr && vma->va + vma->length > fault_addr){
+        if((mem = (char*) walkaddr(p->pagetable, vpage_addr)) == 0){
+          mem = kalloc();
+          prot = vma->prot;
+        }
+
+        if(mem == 0){
+          p->killed = 1;
+          printf("usertrap(): alloc memory failed\n");
+          exit(-1);
+        }
+        memset(mem, 0, PGSIZE);
+
+        if(mappages(p->pagetable, vpage_addr, PGSIZE, (uint64)mem, PTE_U|prot) != 0){
+          kfree(mem);
+          p->killed = 1;
+          printf("usertrap(): cannot mapping\n");
+          exit(-1);
+        }
+
+        struct file *f = vma->f;
+        f->off = vpage_addr - vma->va;
+        fileread(f, vpage_addr, PGSIZE);
+        goto TRAP_END;
+      }
+    }
+    printf("usertrap(): page fault\n");
+    p->killed = 1;
+  } else{
     printf("usertrap(): unexpected scause %p (%s) pid=%d\n", r_scause(), scause_desc(r_scause()), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     p->killed = 1;
@@ -79,6 +116,7 @@ usertrap(void)
   if(p->killed)
     exit(-1);
 
+TRAP_END:
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2)
     yield();

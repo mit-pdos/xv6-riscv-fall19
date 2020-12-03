@@ -59,6 +59,7 @@ void            ramdiskintr(void);
 void            ramdiskrw(struct buf*);
 
 // kalloc.c
+void            in_ref(void *);
 void*           kalloc(void);
 void            kfree(void *);
 void            kinit();
@@ -154,6 +155,7 @@ void            uartputc(int);
 int             uartgetc(void);
 
 // vm.c
+pte_t*          walk(pagetable_t, uint64, int);
 void            kvminit(void);
 void            kvminithart(void);
 uint64          kvmpa(uint64);

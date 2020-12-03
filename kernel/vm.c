@@ -5,6 +5,10 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
+#include "spinlock.h"
+#include "sleeplock.h"
+#include "proc.h"
+#include "file.h"
 
 /*
  * the kernel's page table.
@@ -75,7 +79,7 @@ kvminithart()
 //   21..39 -- 9 bits of level-1 index.
 //   12..20 -- 9 bits of level-0 index.
 //    0..12 -- 12 bits of byte offset within the page.
-static pte_t *
+pte_t *
 walk(pagetable_t pagetable, uint64 va, int alloc)
 {
   if(va >= MAXVA)
@@ -190,6 +194,11 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 size, int do_free)
     if((pte = walk(pagetable, a, 0)) == 0)
       panic("uvmunmap: walk");
     if((*pte & PTE_V) == 0){
+      if(a == last)
+        break;
+      a += PGSIZE;
+      pa += PGSIZE;
+      continue;
       printf("va=%p pte=%p\n", a, *pte);
       panic("uvmunmap: not mapped");
     }
@@ -325,10 +334,27 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   char *mem;
 
   for(i = 0; i < sz; i += PGSIZE){
-    if((pte = walk(old, i, 0)) == 0)
-      panic("uvmcopy: pte should exist");
-    if((*pte & PTE_V) == 0)
-      panic("uvmcopy: page not present");
+    if((pte = walk(old, i, 0)) == 0){
+      // panic("uvmcopy: pte should exist");
+      if((mem = kalloc()) == 0)
+        goto err;
+
+      if(mappages(old, i, PGSIZE, (uint64)mem, PTE_U|PTE_M) != 0){
+        kfree(mem);
+        goto err;
+      }
+      in_ref((void*)mem);
+      if(mappages(new, i, PGSIZE, (uint64)mem, PTE_U|PTE_M) != 0){
+        kfree(mem);
+        goto err;
+      }
+      continue;
+    }
+
+    if((*pte & PTE_V) == 0){
+      // panic("uvmcopy: page not present");
+      continue;
+    }
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
     if((mem = kalloc()) == 0)
@@ -339,6 +365,8 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       goto err;
     }
   }
+
+  
   return 0;
 
  err:
@@ -450,4 +478,87 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   } else {
     return -1;
   }
+}
+
+uint64 sys_mmap(void)
+{
+  uint64 addr;
+  int length;
+  int prot;
+  int flags;
+  int fd;
+  int offset;
+  struct file *f;
+  struct proc *p = myproc();
+  struct vma *vma;
+  uint sz = PGROUNDUP(p->sz);
+
+
+  if(argaddr(0, &addr) < 0 || 
+    argint(1, &length) < 0 || 
+    argint(2, &prot) < 0 ||
+    argint(3, &flags) < 0 ||
+    argint(4, &fd) < 0 ||
+    argint(5, &offset) < 0)
+    return -1;
+
+  f = p->ofile[fd];
+
+  if((prot & PROT_READ) && f->readable == 0)
+    return -1;
+  
+  if((prot & PROT_WRITE) && f->writable == 0 && flags)
+    return -1;
+  
+  
+  filedup(f);
+  for(vma=p->vma_list; vma < p->vma_list + NMAP; vma++){
+    if(vma->valid == 0){
+      vma->valid = 1;
+      vma->va = addr == 0 ? sz : addr;
+      vma->length = PGROUNDUP(length);
+      vma->unmap_length = 0;
+      vma->f = f;
+      vma->prot = prot;
+      vma->offset = offset;
+      vma->flag = flags;
+      p->sz = sz + length;
+      return vma->va;
+    }
+  }
+  fileclose(f);
+  return -1;
+}
+
+uint64 sys_munmap(void)
+{
+    uint64 addr;
+    int length;
+    struct proc *p = myproc();
+    struct vma *vma;
+    
+
+    if(argaddr(0, &addr) < 0 || argint(1, &length) < 0)
+      return -1;
+    
+
+    for(vma=p->vma_list; vma < p->vma_list + NMAP; vma++){
+      if(vma->valid && vma->va <= addr && vma->va + vma->length >= addr){
+        pte_t *pte = walk(p->pagetable, addr, 0);
+        vma->unmap_length += length;
+        if(vma->flag && (*pte & PTE_D)){
+          struct file *f = vma->f;
+          f->off = addr - vma->va;
+          filewrite(f, addr, length);
+        }
+        uvmunmap(p->pagetable, addr, length, 1);
+        if(PGROUNDUP(vma->unmap_length) == vma->length){
+          fileclose(vma->f);
+          vma->valid = 0;
+        }
+        return 0;
+      }
+    }
+    
+    return -1;
 }

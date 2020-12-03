@@ -115,7 +115,6 @@ mmap_test(void)
   _v1(p);
   if (munmap(p, PGSIZE*2) == -1)
     err("munmap (1)");
-
   // should be able to map file opened read-only with private writable
   // mapping
   p = mmap(0, PGSIZE*2, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
@@ -268,4 +267,3 @@ fork_test(void)
 
   printf("fork_test OK\n");
 }
-

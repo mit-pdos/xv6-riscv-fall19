@@ -123,6 +123,10 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  memset(&p->vma_list, 0, sizeof p->vma_list);
+
+  
+
   return p;
 }
 
@@ -272,9 +276,26 @@ fork(void)
   np->tf->a0 = 0;
 
   // increment reference counts on open file descriptors.
-  for(i = 0; i < NOFILE; i++)
+  for(i = 0; i < NOFILE; i++){
     if(p->ofile[i])
       np->ofile[i] = filedup(p->ofile[i]);
+  }
+  
+  for(i = 0; i < NMAP; i++){
+    if(p->vma_list[i].valid){
+      np->vma_list[i].f = p->vma_list[i].f;
+      filedup(p->vma_list[i].f);
+      np->vma_list[i].valid = 1;
+      np->vma_list[i].va = p->vma_list[i].va;
+      np->vma_list[i].length = p->vma_list[i].length;
+      np->vma_list[i].unmap_length = p->vma_list[i].unmap_length;
+      np->vma_list[i].prot = p->vma_list[i].prot;
+      np->vma_list[i].offset = p->vma_list[i].offset;
+      np->vma_list[i].flag = p->vma_list[i].flag;
+    } else{
+      np->vma_list[i].valid = 0;
+    }
+  }
   np->cwd = idup(p->cwd);
 
   safestrcpy(np->name, p->name, sizeof(p->name));
@@ -331,6 +352,14 @@ exit(int status)
       struct file *f = p->ofile[fd];
       fileclose(f);
       p->ofile[fd] = 0;
+    }
+  }
+
+  for(int i=0; i < NMAP; i++){
+    if(p->vma_list[i].valid){
+      struct file *f = p->vma_list[i].f;
+      fileclose(f);
+      p->vma_list[i].valid = 0;
     }
   }
 
