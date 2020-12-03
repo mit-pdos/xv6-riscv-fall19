@@ -336,13 +336,21 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0){
       // panic("uvmcopy: pte should exist");
-      printf("pte not exist\n");
+      if((mem = kalloc()) == 0)
+        goto err;
+      if(mappages(old, i, PGSIZE, (uint64)mem, PTE_U) != 0){
+        kfree(mem);
+        goto err;
+      }
+      if(mappages(new, i, PGSIZE, (uint64)mem, PTE_U) != 0){
+        kfree(mem);
+        goto err;
+      }
       continue;
     }
 
     if((*pte & PTE_V) == 0){
       // panic("uvmcopy: page not present");
-      printf("page not present\n");
       continue;
     }
     pa = PTE2PA(*pte);
@@ -355,6 +363,8 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       goto err;
     }
   }
+
+  
   return 0;
 
  err:
