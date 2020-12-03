@@ -77,10 +77,13 @@ usertrap(void)
     uint64 fault_addr = r_stval();
     uint64 vpage_addr = PGROUNDDOWN(fault_addr);
     char *mem;
+    int prot;
     for(struct vma *vma = p->vma_list; vma < p->vma_list + NMAP; vma++){
       if(vma->valid != 0 && vma->va <= fault_addr && vma->va + vma->length > fault_addr){
-        if((mem = (char*) walkaddr(p->pagetable, vpage_addr)) == 0)
+        if((mem = (char*) walkaddr(p->pagetable, vpage_addr)) == 0){
           mem = kalloc();
+          prot = vma->prot;
+        }
 
         if(mem == 0){
           p->killed = 1;
@@ -89,7 +92,7 @@ usertrap(void)
         }
         memset(mem, 0, PGSIZE);
 
-        if(mappages(p->pagetable, vpage_addr, PGSIZE, (uint64)mem, PTE_U|vma->prot) != 0){
+        if(mappages(p->pagetable, vpage_addr, PGSIZE, (uint64)mem, PTE_U|prot) != 0){
           kfree(mem);
           p->killed = 1;
           printf("usertrap(): cannot mapping\n");

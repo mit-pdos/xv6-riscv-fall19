@@ -338,11 +338,13 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       // panic("uvmcopy: pte should exist");
       if((mem = kalloc()) == 0)
         goto err;
-      if(mappages(old, i, PGSIZE, (uint64)mem, PTE_U) != 0){
+
+      if(mappages(old, i, PGSIZE, (uint64)mem, PTE_U|PTE_M) != 0){
         kfree(mem);
         goto err;
       }
-      if(mappages(new, i, PGSIZE, (uint64)mem, PTE_U) != 0){
+      in_ref((void*)mem);
+      if(mappages(new, i, PGSIZE, (uint64)mem, PTE_U|PTE_M) != 0){
         kfree(mem);
         goto err;
       }
@@ -539,10 +541,12 @@ uint64 sys_munmap(void)
     if(argaddr(0, &addr) < 0 || argint(1, &length) < 0)
       return -1;
     
+
     for(vma=p->vma_list; vma < p->vma_list + NMAP; vma++){
       if(vma->valid && vma->va <= addr && vma->va + vma->length >= addr){
+        pte_t *pte = walk(p->pagetable, addr, 0);
         vma->unmap_length += length;
-        if(vma->flag){
+        if(vma->flag && (*pte & PTE_D)){
           struct file *f = vma->f;
           f->off = addr - vma->va;
           filewrite(f, addr, length);
